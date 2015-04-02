@@ -40,10 +40,10 @@ describe "jdbc" do
       plugin.run(q)
     end
     sleep 3
+    plugin.teardown
     runner.kill
     runner.join
     insist { q.size } == 2
-    plugin.teardown
     Timecop.return
   end
 
