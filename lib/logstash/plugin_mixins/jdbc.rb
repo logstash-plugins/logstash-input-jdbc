@@ -35,6 +35,12 @@ module LogStash::PluginMixins::Jdbc
     # JDBC password
     config :jdbc_password, :validate => :password
 
+    # JDBC enable paging
+    config :jdbc_paging_enabled, :validate => :boolean, :default => false 
+
+    # JDBC page size
+    config :jdbc_page_size, :validate => :number, :default => 100000
+
     # Connection pool configuration.
     # Validate connection before use.
     config :jdbc_validate_connection, :validate => :boolean, :default => false
@@ -52,9 +58,10 @@ module LogStash::PluginMixins::Jdbc
     require @jdbc_driver_library if @jdbc_driver_library
     Sequel::JDBC.load_driver(@jdbc_driver_class)
     @database = Sequel.connect(@jdbc_connection_string, :user=> @jdbc_user, :password=>  @jdbc_password.nil? ? nil : @jdbc_password.value)
+    @database.extension(:pagination)
     if @jdbc_validate_connection
       @database.extension(:connection_validator)
-      @database.pool.connection_validation_timeout = @jdcb_validation_timeout
+      @database.pool.connection_validation_timeout = @jdbc_validation_timeout
     end
     begin
       @database.test_connection
@@ -77,9 +84,19 @@ module LogStash::PluginMixins::Jdbc
       query = @database[statement, parameters]
       @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters)
       @sql_last_start = Time.now.utc
-      query.all do |row|
-        #Stringify row keys
-        yield Hash[row.map { |k, v| [k.to_s, v] }]
+
+      if @jdbc_paging_enabled
+        query.each_page(@jdbc_page_size) do |paged_dataset|
+          paged_dataset.each do |row|
+            #Stringify row keys
+            yield Hash[row.map { |k, v| [k.to_s, v] }]
+          end
+        end
+      else
+        query.each do |row|
+          #Stringify row keys
+          yield Hash[row.map { |k, v| [k.to_s, v] }]
+        end
       end
       success = true
     rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
