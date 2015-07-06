@@ -47,7 +47,7 @@ module LogStash::PluginMixins::Jdbc
 
     # Connection pool configuration.
     # How often to validate a connection (in seconds)
-    config :jdcb_validation_timeout, :validate => :number, :default => 3600
+    config :jdbc_validation_timeout, :validate => :number, :default => 3600
   end
 
   public
