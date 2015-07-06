@@ -30,7 +30,7 @@ describe "jdbc" do
   end
 
   it "should properly schedule" do
-    settings = {"statement" => "SELECT 1 as num_param FROM SYSIBM.SYSDUMMY1", "schedule" => "* * * * *"}
+    settings = {"statement" => "SELECT 1 as num_param FROM SYSIBM.SYSDUMMY1", "schedule" => "* * * * * UTC"}
     plugin = LogStash::Inputs::Jdbc.new(mixin_settings.merge(settings))
     plugin.register
     q = Queue.new
@@ -45,6 +45,36 @@ describe "jdbc" do
     runner.join
     insist { q.size } == 2
     Timecop.return
+  end
+
+  it "should appropriately page table" do
+    require "sequel"
+    require "sequel/adapters/jdbc"
+    Jdbc::Derby.load_driver
+    @database = Sequel.connect(mixin_settings['jdbc_connection_string'], :user=> nil, :password=> nil)
+    @database.create_table :test_table do
+      DateTime :created_at
+      Integer :num
+    end
+    test_table = @database[:test_table]
+    settings = {"statement" => "SELECT * from test_table",
+                "jdbc_paging_enabled" => true, "jdbc_page_size" => 20}
+    plugin = LogStash::Inputs::Jdbc.new(mixin_settings.merge(settings))
+    plugin.register
+    q = Queue.new
+
+    NUM_ROWS = 1000
+
+    NUM_ROWS.times do
+      test_table.insert(:num => 1, :created_at => Time.now.utc)
+    end
+
+    plugin.run(q)
+    plugin.teardown
+
+    insist { q.size } == NUM_ROWS
+
+    @database.drop_table(:test_table)
   end
 
   it "should successfully iterate table with respect to field values" do
@@ -80,5 +110,7 @@ describe "jdbc" do
     plugin.teardown
 
     insist { actual_sum } == nums.inject{|sum,x| sum + x }
+
+    @database.drop_table(:test_table)
   end
 end
