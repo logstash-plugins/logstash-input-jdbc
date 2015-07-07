@@ -260,4 +260,34 @@ describe "jdbc" do
       expect(File).not_to exist(settings["last_run_metadata_path"])
     end
   end
+
+  context "when setting fetch size" do
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * from test_table",
+        "jdbc_fetch_size" => 1
+      }
+    end
+
+    let(:num_rows) { 10 }
+
+    before do
+      num_rows.times do
+        db[:test_table].insert(:num => 1, :created_at => Time.now.utc)
+      end
+
+      plugin.register
+    end
+
+    after do
+      plugin.teardown
+    end
+
+    it "should fetch all rows" do
+      plugin.run(queue)
+      expect(queue.size).to eq(num_rows)
+    end
+
+  end
 end
