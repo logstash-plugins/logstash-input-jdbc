@@ -13,8 +13,6 @@ module LogStash::PluginMixins::Jdbc
     # Add these methods to the 'base' given.
     base.extend(self)
     base.setup_jdbc_config
-
-    @sql_last_start = Time.at(0).utc
   end
 
 
@@ -69,6 +67,8 @@ module LogStash::PluginMixins::Jdbc
       #TODO return false and let the plugin raise a LogStash::ConfigurationError
       raise e
     end
+
+    @sql_last_start = Time.at(0).utc
   end # def prepare_jdbc_connection
 
   public

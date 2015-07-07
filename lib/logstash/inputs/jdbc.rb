@@ -2,6 +2,7 @@
 require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc"
+require "yaml" # persistence
 
 # INFORMATION
 #
@@ -59,11 +60,27 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # for example: "* * * * *" (execute query every minute, on the minute)
   config :schedule, :validate => :string
 
+  # Path to file with last run time
+  config :last_run_metadata_path, :validate => :string, :default => "#{ENV['HOME']}/.logstash_jdbc_last_run"
+
+  # Whether the previous run state should be preserved
+  config :clean_run, :validate => :boolean, :default => false
+
+  # Whether to save state or not in last_run_metadata_path
+  config :record_last_run, :validate => :boolean, :default => true
+
   public
 
   def register
     require "rufus/scheduler"
     prepare_jdbc_connection()
+
+    # load sql_last_start from file if exists
+    if @clean_run && File.exists?(@last_run_metadata_path)
+      File.delete(@last_run_metadata_path)
+    elsif File.exists?(@last_run_metadata_path)
+      @sql_last_start = YAML.load(File.read(@last_run_metadata_path))
+    end
   end # def register
 
   def run(queue)
@@ -82,10 +99,19 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     if @scheduler
       @scheduler.stop
     end
+
+    # update state file for next run
+    if @record_last_run
+      File.open(@last_run_metadata_path, 'w') do |f|
+        f.write(YAML.dump(@sql_last_start))
+      end
+    end
+
     close_jdbc_connection()
   end # def teardown
 
   private
+
   def execute_query(queue)
     # update default parameters
     @parameters['sql_last_start'] = @sql_last_start
