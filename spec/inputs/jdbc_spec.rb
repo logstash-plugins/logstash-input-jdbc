@@ -2,6 +2,7 @@ require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/jdbc"
 require "jdbc/derby"
 require "timecop"
+require "stud/temporary"
 
 
 describe "jdbc" do
@@ -112,5 +113,60 @@ describe "jdbc" do
     insist { actual_sum } == nums.inject{|sum,x| sum + x }
 
     @database.drop_table(:test_table)
+  end
+
+  context "persistence" do
+
+    it "should respect last run metadata" do
+      settings = {
+        "statement" => "SELECT * FROM SYSIBM.SYSDUMMY1",
+        "last_run_metadata_path" => Stud::Temporary.pathname
+      }
+      plugin = LogStash::Inputs::Jdbc.new(mixin_settings.merge(settings))
+      plugin.register
+      q = Queue.new
+      plugin.run(q)
+      plugin.teardown
+
+      insist { File.exists?(settings["last_run_metadata_path"]) }
+      last_run = YAML.load(File.read(settings["last_run_metadata_path"]))
+
+      plugin = LogStash::Inputs::Jdbc.new(mixin_settings.merge(settings))
+      plugin.register
+      insist { plugin.instance_variable_get("@sql_last_start") } == last_run
+      plugin.teardown
+    end
+
+    it "should ignore last run metadata if :clean_run set to true" do
+      settings = {
+        "statement" => "SELECT * FROM SYSIBM.SYSDUMMY1",
+        "last_run_metadata_path" => Stud::Temporary.pathname,
+        "clean_run" => true
+      }
+
+      File.open(settings["last_run_metadata_path"], "w") { |f| f.write(YAML.dump(Time.at(1).utc)) }
+
+      plugin = LogStash::Inputs::Jdbc.new(mixin_settings.merge(settings))
+      plugin.register
+
+      insist { plugin.instance_variable_get("@sql_last_start") } == Time.at(0).utc
+
+      plugin.teardown
+    end
+
+    it "should not save state if :record_last_run is false" do
+      settings = {
+        "statement" => "SELECT * FROM SYSIBM.SYSDUMMY1",
+        "last_run_metadata_path" => Stud::Temporary.pathname,
+        "record_last_run" => false
+      }
+
+      plugin = LogStash::Inputs::Jdbc.new(mixin_settings.merge(settings))
+      plugin.register
+
+      insist { File.exists?(settings["last_run_metadata_path"]) }
+
+      plugin.teardown
+    end
   end
 end
