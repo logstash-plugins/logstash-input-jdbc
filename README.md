@@ -84,6 +84,37 @@ bin/plugin install /your/local/plugin/logstash-input-jdbc.gem
 ```
 - Start Logstash and proceed to test the plugin
 
+## Example configuration
+
+Reading data from MySQL:  
+
+	input {
+	  jdbc {
+	    jdbc_driver_library => "/path/to/mysql-connector-java-5.1.33-bin.jar"
+	    jdbc_driver_class => "com.mysql.jdbc.Driver"
+	    jdbc_connection_string => "jdbc:mysql://host:port/database"
+	    jdbc_user => "user"
+	    jdbc_password => "password"
+	    statement => "SELECT ..."
+	    jdbc_paging_enabled => "true"
+	    jdbc_page_size => "50000"
+	  }
+	}
+
+	filter {
+	  [some filters here]
+	}
+
+	output {
+	  stdout {
+	    codec => rubydebug
+	  }
+	  elasticsearch_http {
+	    host => "host"
+	    index => "myindex"
+	  }
+	}
+
 ## Contributing
 
 All contributions are welcome: ideas, patches, documentation, bug reports, complaints, and even something you drew up on a napkin.
