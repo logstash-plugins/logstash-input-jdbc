@@ -25,6 +25,7 @@ require "yaml" # persistence
 # |==========================================================
 #
 # #### Usage:
+#
 # This is an example logstash config
 # [source,ruby]
 # input {
@@ -38,6 +39,14 @@ require "yaml" # persistence
 #     schedule => "* * * * *"
 #   }
 # }
+#
+# ==== statement vs statement_filepath
+# 
+# A supplied sql statement is required. This can be passed-in via a 
+# statement field in the form of a string, or read from a file. The plugin will 
+# only accept one of the options. It cannot read a statement from a file as well as
+# from the `statement` configuration parameter.
+#
 class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   include LogStash::PluginMixins::Jdbc
   config_name "jdbc"
@@ -50,8 +59,10 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # For example:
   # "SELECT * FROM MYTABLE WHERE id = :target_id"
   # here ":target_id" is a named parameter
-  #
-  config :statement, :validate => :string, :required => true
+  config :statement, :validate => :string
+
+  # Path of file containing statement to execute
+  config :statement_filepath, :validate => :path
 
   # Hash of query parameter, for example `{ "target_id" => "321" }`
   config :parameters, :validate => :hash, :default => {}
@@ -81,6 +92,12 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     elsif File.exists?(@last_run_metadata_path)
       @sql_last_start = YAML.load(File.read(@last_run_metadata_path))
     end
+
+    unless @statement.nil? ^ @statement_filepath.nil?
+      raise(LogStash::ConfigurationError, "Must set either :statement or :statement_filepath. Only one may be set at a time.")
+    end
+
+    @statement = File.read(@statement_filepath) if @statement_filepath
   end # def register
 
   def run(queue)
