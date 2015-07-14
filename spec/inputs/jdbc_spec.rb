@@ -42,6 +42,41 @@ describe "jdbc" do
     end
   end
 
+  context "when neither statement and statement_filepath arguments are passed" do
+    it "should fail to register" do
+      expect{ plugin.register }.to raise_error(LogStash::ConfigurationError)
+    end
+  end
+
+  context "when both statement and statement_filepath arguments are passed" do
+    let(:statement) { "SELECT * from test_table" }
+    let(:statement_file_path) { Stud::Temporary.pathname }
+    let(:settings) { { "statement_filepath" => statement_file_path, "statement" => statement } }
+
+    it "should fail to register" do
+      expect{ plugin.register }.to raise_error(LogStash::ConfigurationError)
+    end
+  end
+
+  context "when statement is passed in from a file" do
+    let(:statement) { "SELECT * from test_table" }
+    let(:statement_file_path) { Stud::Temporary.pathname }
+    let(:settings) { { "statement_filepath" => statement_file_path } }
+
+    before do
+      File.write(statement_file_path, statement)
+      plugin.register
+    end
+
+    after do
+      plugin.teardown
+    end
+
+    it "should read in statement from file" do
+      expect(plugin.statement).to eq(statement)
+    end
+  end
+
   context "when passing parameters" do
     let(:settings) do
       {
