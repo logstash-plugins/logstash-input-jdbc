@@ -4,25 +4,11 @@ require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc"
 require "yaml" # persistence
 
-# INFORMATION
-#
-# This plugin was created as a way to iteratively ingest any database
-# with a JDBC interface into Logstash.
-#
-# ==== JDBC Mixin
-#
-# This plugin utilizes a mixin that helps Logstash plugins manage JDBC connections.
-# The mixin provides its own set of configurations (some are required) to properly 
-# set up the connection to the appropriate database.
-#
-# ==== Predefined Parameters
-#
-# Some parameters are built-in and can be used from within your queries.
-# Here is the list:
-#
-# |==========================================================
-# |sql_last_start |The time the last query executed in plugin
-# |==========================================================
+# This plugin was created as a way to iteratively ingest data in any database
+# with a JDBC interface into Logstash. You can periodically schedule ingestion
+# using a cron syntax (see `schedule` setting) or run the query one time to load
+# data into Logstash. Each row in the resultset becomes a single event.
+# Columns in the resultset are converted into fields in the event.
 #
 # ==== Usage:
 #
@@ -48,6 +34,15 @@ require "yaml" # persistence
 # statement field in the form of a string, or read from a file. The plugin will 
 # only accept one of the options. It cannot read a statement from a file as well as
 # from the `statement` configuration parameter.
+#
+# ==== Predefined Parameters
+#
+# Some parameters are built-in and can be used from within your queries.
+# Here is the list:
+#
+# |==========================================================
+# |sql_last_start |The time the last query executed in plugin
+# |==========================================================
 #
 class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   include LogStash::PluginMixins::Jdbc
