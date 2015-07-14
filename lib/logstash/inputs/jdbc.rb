@@ -10,17 +10,17 @@ require "yaml" # persistence
 # data into Logstash. Each row in the resultset becomes a single event.
 # Columns in the resultset are converted into fields in the event.
 #
-# ==== Usage:
+# ==== Sample usage:
 #
 # This is an example logstash config
 # [source,ruby]
 # ----------------------------------
 # input {
 #   jdbc {
-#     jdbc_driver_class => "org.apache.derby.jdbc.EmbeddedDriver" (required; from mixin)
-#     jdbc_connection_string => "jdbc:derby:memory:testdb;create=true" (required; from mixin)
-#     jdbc_user => "username" (from mixin)
-#     jdbc_password => "mypass" (from mixin)
+#     jdbc_driver_class => "org.apache.derby.jdbc.EmbeddedDriver" (required)
+#     jdbc_connection_string => "jdbc:derby:memory:testdb;create=true" (required)
+#     jdbc_user => "username" (required)
+#     jdbc_password => "mypass"
 #     statement => "SELECT * from table where created_at > :sql_last_start and id = :my_id" (required)
 #     parameters => { "my_id" => "231" }
 #     schedule => "* * * * *"
@@ -28,12 +28,13 @@ require "yaml" # persistence
 # }
 # ----------------------------------
 #
-# ==== statement vs statement_filepath
+# ==== Configuring SQL statement
 # 
-# A supplied sql statement is required. This can be passed-in via a 
-# statement field in the form of a string, or read from a file. The plugin will 
-# only accept one of the options. It cannot read a statement from a file as well as
-# from the `statement` configuration parameter.
+# A sql statement is required for this input. This can be passed-in via a 
+# statement option in the form of a string, or read from a file (`statement_filepath`). File 
+# option is typically used when the SQL statement is large or cumbersome to supply in the config.
+# The file option only supports one SQL statement. The plugin will only accept one of the options.
+# It cannot read a statement from a file as well as from the `statement` configuration parameter.
 #
 # ==== Predefined Parameters
 #
