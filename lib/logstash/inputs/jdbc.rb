@@ -28,6 +28,7 @@ require "yaml" # persistence
 #
 # This is an example logstash config
 # [source,ruby]
+# ----------------------------------
 # input {
 #   jdbc {
 #     jdbc_driver_class => "org.apache.derby.jdbc.EmbeddedDriver" (required; from mixin)
@@ -39,6 +40,7 @@ require "yaml" # persistence
 #     schedule => "* * * * *"
 #   }
 # }
+# ----------------------------------
 #
 # ==== statement vs statement_filepath
 # 
@@ -55,10 +57,17 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   default :codec, "plain" 
 
   # Statement to execute
+  #
   # To use parameters, use named parameter syntax.
   # For example:
+  #
+  # [source, ruby]
+  # ----------------------------------
   # "SELECT * FROM MYTABLE WHERE id = :target_id"
-  # here ":target_id" is a named parameter
+  # ----------------------------------
+  #
+  # here, ":target_id" is a named parameter. You can configure named parameters
+  # with the `parameters` setting.
   config :statement, :validate => :string
 
   # Path of file containing statement to execute
@@ -69,6 +78,9 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
   # Schedule of when to periodically run statement, in Cron format
   # for example: "* * * * *" (execute query every minute, on the minute)
+  #
+  # There is no schedule by default. If no schedule is given, then the statement is run
+  # exactly once.
   config :schedule, :validate => :string
 
   # Path to file with last run time
@@ -84,12 +96,12 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
   def register
     require "rufus/scheduler"
-    prepare_jdbc_connection()
+    prepare_jdbc_connection
 
     # load sql_last_start from file if exists
-    if @clean_run && File.exists?(@last_run_metadata_path)
+    if @clean_run && File.exist?(@last_run_metadata_path)
       File.delete(@last_run_metadata_path)
-    elsif File.exists?(@last_run_metadata_path)
+    elsif File.exist?(@last_run_metadata_path)
       @sql_last_start = YAML.load(File.read(@last_run_metadata_path))
     end
 
@@ -113,18 +125,14 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   end # def run
 
   def teardown
-    if @scheduler
-      @scheduler.stop
-    end
+    @scheduler.stop if @scheduler
 
     # update state file for next run
     if @record_last_run
-      File.open(@last_run_metadata_path, 'w') do |f|
-        f.write(YAML.dump(@sql_last_start))
-      end
+      File.write(@last_run_metadata_path, YAML.dump(@sql_last_start))
     end
 
-    close_jdbc_connection()
+    close_jdbc_connection
   end # def teardown
 
   private
