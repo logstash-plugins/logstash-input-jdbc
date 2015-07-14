@@ -9,13 +9,13 @@ require "yaml" # persistence
 # This plugin was created as a way to iteratively ingest any database
 # with a JDBC interface into Logstash.
 #
-# #### JDBC Mixin
+# ==== JDBC Mixin
 #
 # This plugin utilizes a mixin that helps Logstash plugins manage JDBC connections.
 # The mixin provides its own set of configurations (some are required) to properly 
 # set up the connection to the appropriate database.
 #
-# #### Predefined Parameters
+# ==== Predefined Parameters
 #
 # Some parameters are built-in and can be used from within your queries.
 # Here is the list:
@@ -24,7 +24,7 @@ require "yaml" # persistence
 # |sql_last_start |The time the last query executed in plugin
 # |==========================================================
 #
-# #### Usage:
+# ==== Usage:
 #
 # This is an example logstash config
 # [source,ruby]
