@@ -34,6 +34,12 @@ module LogStash::PluginMixins::Jdbc
     config :jdbc_password, :validate => :password
 
     # JDBC enable paging
+    #
+    # This will cause a sql statement to be broken up into multiple queries.
+    # Each query will use limits and offsets to collectively retrieve the full
+    # result-set. The limit size is set with `jdbc_page_size`.
+    #
+    # Be aware that ordering is not guaranteed between queries.
     config :jdbc_paging_enabled, :validate => :boolean, :default => false 
 
     # JDBC page size
