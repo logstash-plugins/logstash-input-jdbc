@@ -28,7 +28,7 @@ module LogStash::PluginMixins::Jdbc
     config :jdbc_connection_string, :validate => :string, :required => true
 
     # JDBC user
-    config :jdbc_user, :validate => :string, :default => "tal"
+    config :jdbc_user, :validate => :string, :required => true
 
     # JDBC password
     config :jdbc_password, :validate => :password
