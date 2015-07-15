@@ -8,7 +8,7 @@ require "stud/temporary"
 
 
 describe "jdbc" do
-  let(:mixin_settings) { {"jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver", "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"} }
+  let(:mixin_settings) { {"jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver", "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"} }
   let(:settings) { {} }
   let(:plugin) { LogStash::Inputs::Jdbc.new(mixin_settings.merge(settings)) }
   let(:queue) { Queue.new }
