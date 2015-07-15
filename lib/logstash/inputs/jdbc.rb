@@ -4,26 +4,65 @@ require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc"
 require "yaml" # persistence
 
-# This plugin was created as a way to iteratively ingest data in any database
+# This plugin was created as a way to ingest data in any database
 # with a JDBC interface into Logstash. You can periodically schedule ingestion
 # using a cron syntax (see `schedule` setting) or run the query one time to load
 # data into Logstash. Each row in the resultset becomes a single event.
 # Columns in the resultset are converted into fields in the event.
 #
-# ==== Sample usage:
+# ==== Drivers
 #
-# This is an example logstash config
+# This plugin does not come packaged with JDBC driver libraries. The desired 
+# jdbc driver library must be explicitly passed in to the plugin using the
+# `jdbc_driver_library` configuration option.
+# 
+# ==== Scheduling
+#
+# Input from this plugin can be scheduled to run periodically according to a specific 
+# schedule. This scheduling syntax is powered by [rufus-scheduler](https://github.com/jmettraux/rufus-scheduler).
+# The syntax is cron-like with some extensions specific to Rufus (e.g. timezone support ).
+#
+# Examples:
+#
+# |==========================================================
+# | * 5 * 1-3 *               | will execute every minute of 5am every day of January through March.
+# | 0 * * * *                 | will execute on the 0th minute of every hour every day.
+# | 0 6 * * * America/Chicago | will execute at 6:00am (UTC/GMT -5) every day.
+# |==========================================================
+#   
+#
+# Further documentation describing this syntax can be found [here](https://github.com/jmettraux/rufus-scheduler#parsing-cronlines-and-time-strings)
+#
+# ==== State
+#
+# The plugin will persist the `sql_last_start` parameter in the form of a 
+# metadata file stored in the configured `last_run_metadata_path`. Upon shutting down, 
+# this file will be updated with the current value of `sql_last_start`. Next time
+# the pipeline starts up, this value will be updated by reading from the file. If 
+# `clean_run` is set to true, this value will be ignored and `sql_last_start` will be
+# set to Jan 1, 1970, as if no query has ever been executed.
+#
+# ==== Usage:
+#
+# Here is an example of setting up the plugin to fetch data from a MySQL database.
+# First, we place the appropriate JDBC driver library in our current
+# path (this can be placed anywhere on your filesystem). In this example, we connect to 
+# the 'mydb' database using the user: 'mysql' and wish to input all rows in the 'songs'
+# table that match a specific artist. The following examples demonstrates a possible 
+# Logstash configuration for this. The `schedule` option in this example will 
+# instruct the plugin to execute this input statement on the minute, every minute.
+#
 # [source,ruby]
 # ----------------------------------
 # input {
 #   jdbc {
-#     jdbc_driver_class => "org.apache.derby.jdbc.EmbeddedDriver" (required)
-#     jdbc_connection_string => "jdbc:derby:memory:testdb;create=true" (required)
-#     jdbc_user => "username" (required)
-#     jdbc_password => "mypass"
-#     statement => "SELECT * from table where created_at > :sql_last_start and id = :my_id" (required)
-#     parameters => { "my_id" => "231" }
+#     jdbc_driver_library => "mysql-connector-java-5.1.36-bin.jar"
+#     jdbc_driver_class => "com.mysql.jdbc.Driver"
+#     jdbc_connection_string => "jdbc:mysql://localhost:3306/mydb"
+#     jdbc_user => "mysql"
+#     parameters => { "favorite_artist" => "Beethoven" }
 #     schedule => "* * * * *"
+#     statement => "SELECT * from songs where artist = :favorite_artist"
 #   }
 # }
 # ----------------------------------
@@ -42,7 +81,9 @@ require "yaml" # persistence
 # Here is the list:
 #
 # |==========================================================
-# |sql_last_start |The time the last query executed in plugin
+# |sql_last_start | The last time a statement was executed. This is set to
+# |               | Thursday, 1 January 1970 before any query is run, and updated 
+# |               | accordingly after first query is run.
 # |==========================================================
 #
 class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
