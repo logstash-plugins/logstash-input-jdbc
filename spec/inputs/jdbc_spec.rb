@@ -288,6 +288,17 @@ describe "jdbc" do
       plugin.run(queue)
       expect(queue.size).to eq(num_rows)
     end
+  end
 
+  context "when driver is not found" do
+    let(:settings) { { "statement" => "SELECT * FROM test_table" } }
+
+    before do
+      mixin_settings['jdbc_driver_class'] = "org.not.ExistsDriver"
+    end
+
+    it "should fail" do
+      expect { plugin.register }.to raise_error(LogStash::ConfigurationError)
+    end
   end
 end

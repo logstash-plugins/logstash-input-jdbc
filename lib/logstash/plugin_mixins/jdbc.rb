@@ -19,6 +19,8 @@ module LogStash::PluginMixins::Jdbc
   public
   def setup_jdbc_config
     # JDBC driver library path to third party driver library.
+    #
+    # If not provided, Plugin will look for the driver class in the Logstash Java classpath.
     config :jdbc_driver_library, :validate => :path
 
     # JDBC driver class to load, for example "oracle.jdbc.OracleDriver" or "org.apache.derby.jdbc.ClientDriver"
@@ -63,7 +65,17 @@ module LogStash::PluginMixins::Jdbc
     require "sequel"
     require "sequel/adapters/jdbc"
     require @jdbc_driver_library if @jdbc_driver_library
-    Sequel::JDBC.load_driver(@jdbc_driver_class)
+    begin
+      Sequel::JDBC.load_driver(@jdbc_driver_class)
+    rescue Sequel::AdapterNotFound => e
+      message = if @jdbc_driver_library.nil?
+                  ":jdbc_driver_library is not set, are you sure you included 
+                  the proper driver client libraries in your classpath?"
+                else
+                  "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
+                end
+      raise LogStash::ConfigurationError, "#{e}. #{message}"
+    end
     @database = Sequel.connect(@jdbc_connection_string, :user=> @jdbc_user, :password=>  @jdbc_password.nil? ? nil : @jdbc_password.value)
     @database.extension(:pagination)
     if @jdbc_validate_connection
