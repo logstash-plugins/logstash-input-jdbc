@@ -19,19 +19,19 @@ require "yaml" # persistence
 # ==== Scheduling
 #
 # Input from this plugin can be scheduled to run periodically according to a specific 
-# schedule. This scheduling syntax is powered by [rufus-scheduler](https://github.com/jmettraux/rufus-scheduler).
+# schedule. This scheduling syntax is powered by https://github.com/jmettraux/rufus-scheduler[rufus-scheduler].
 # The syntax is cron-like with some extensions specific to Rufus (e.g. timezone support ).
 #
 # Examples:
 #
 # |==========================================================
-# | * 5 * 1-3 *               | will execute every minute of 5am every day of January through March.
-# | 0 * * * *                 | will execute on the 0th minute of every hour every day.
-# | 0 6 * * * America/Chicago | will execute at 6:00am (UTC/GMT -5) every day.
+# | `* 5 * 1-3 *`               | will execute every minute of 5am every day of January through March.
+# | `0 * * * *`                 | will execute on the 0th minute of every hour every day.
+# | `0 6 * * * America/Chicago` | will execute at 6:00am (UTC/GMT -5) every day.
 # |==========================================================
 #   
 #
-# Further documentation describing this syntax can be found [here](https://github.com/jmettraux/rufus-scheduler#parsing-cronlines-and-time-strings)
+# Further documentation describing this syntax can be found https://github.com/jmettraux/rufus-scheduler#parsing-cronlines-and-time-strings[here].
 #
 # ==== State
 #
@@ -90,9 +90,8 @@ require "yaml" # persistence
 # Here is the list:
 #
 # |==========================================================
-# |sql_last_start | The last time a statement was executed. This is set to
-# |               | Thursday, 1 January 1970 before any query is run, and updated 
-# |               | accordingly after first query is run.
+# |sql_last_start | The last time a statement was executed. This is set to Thursday, 1 January 1970
+#  before any query is run, and updated accordingly after first query is run.
 # |==========================================================
 #
 class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
