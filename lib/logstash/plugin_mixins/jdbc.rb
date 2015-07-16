@@ -45,6 +45,9 @@ module LogStash::PluginMixins::Jdbc
     # JDBC page size
     config :jdbc_page_size, :validate => :number, :default => 100000
 
+    # JDBC fetch size. if not provided, respective driver's default will be used
+    config :jdbc_fetch_size, :validate => :number
+
     # Connection pool configuration.
     # Validate connection before use.
     config :jdbc_validate_connection, :validate => :boolean, :default => false
@@ -67,6 +70,7 @@ module LogStash::PluginMixins::Jdbc
       @database.extension(:connection_validator)
       @database.pool.connection_validation_timeout = @jdbc_validation_timeout
     end
+    @database.fetch_size = @jdbc_fetch_size unless @jdbc_fetch_size.nil?
     begin
       @database.test_connection
     rescue Sequel::DatabaseConnectionError => e

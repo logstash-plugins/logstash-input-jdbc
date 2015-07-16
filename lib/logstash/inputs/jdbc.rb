@@ -42,6 +42,15 @@ require "yaml" # persistence
 # `clean_run` is set to true, this value will be ignored and `sql_last_start` will be
 # set to Jan 1, 1970, as if no query has ever been executed.
 #
+# ==== Dealing With Large Result-sets
+#
+# Many JDBC drivers use the `fetch_size` parameter to limit how many
+# results are pre-fetched at a time from the cursor into the client's cache
+# before retrieving more results from the result-set. This is configured in
+# this plugin using the `jdbc_fetch_size` configuration option. No fetch size
+# is set by default in this plugin, so the specific driver's default size will 
+# be used.
+#
 # ==== Usage:
 #
 # Here is an example of setting up the plugin to fetch data from a MySQL database.
