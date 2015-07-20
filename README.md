@@ -1,7 +1,5 @@
 # Logstash JDBC Input Plugin
 
-## WIP: Under Development, NOT FOR PRODUCTION
-
 This is a plugin for [Logstash](https://github.com/elasticsearch/logstash).
 
 It is fully free and fully open source. The license is Apache 2.0, meaning you are pretty much free to use it however you want in whatever way.
@@ -85,6 +83,37 @@ gem build logstash-input-jdbc.gemspec
 bin/plugin install /your/local/plugin/logstash-input-jdbc.gem
 ```
 - Start Logstash and proceed to test the plugin
+
+## Example configuration
+
+Reading data from MySQL:  
+
+	input {
+	  jdbc {
+	    jdbc_driver_library => "/path/to/mysql-connector-java-5.1.33-bin.jar"
+	    jdbc_driver_class => "com.mysql.jdbc.Driver"
+	    jdbc_connection_string => "jdbc:mysql://host:port/database"
+	    jdbc_user => "user"
+	    jdbc_password => "password"
+	    statement => "SELECT ..."
+	    jdbc_paging_enabled => "true"
+	    jdbc_page_size => "50000"
+	  }
+	}
+
+	filter {
+	  [some filters here]
+	}
+
+	output {
+	  stdout {
+	    codec => rubydebug
+	  }
+	  elasticsearch_http {
+	    host => "host"
+	    index => "myindex"
+	  }
+	}
 
 ## Contributing
 
