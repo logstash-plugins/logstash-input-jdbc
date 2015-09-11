@@ -6,8 +6,7 @@ require "sequel/adapters/jdbc"
 require "timecop"
 require "stud/temporary"
 
-
-describe "jdbc" do
+describe LogStash::Inputs::Jdbc do
   let(:mixin_settings) { {"jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver", "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"} }
   let(:settings) { {} }
   let(:plugin) { LogStash::Inputs::Jdbc.new(mixin_settings.merge(settings)) }
@@ -33,12 +32,22 @@ describe "jdbc" do
 
     it "should register without raising exception" do
       expect { plugin.register }.to_not raise_error
-      plugin.close
+      plugin.stop
     end
 
-    it "should close without raising exception" do
+    it "should stop without raising exception" do
       plugin.register
-      expect { plugin.close }.to_not raise_error
+      expect { plugin.stop }.to_not raise_error
+    end
+
+    it_behaves_like "an interruptible input plugin" do
+      let(:settings) do
+        {
+          "statement" => "SELECT 1 FROM test_table",
+          "schedule" => "* * * * * UTC"
+        }
+      end
+      let(:config) { mixin_settings.merge(settings) }
     end
   end
 
@@ -69,7 +78,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.close
+      plugin.stop
     end
 
     it "should read in statement from file" do
@@ -90,7 +99,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.close
+      plugin.stop
     end
 
     it "should retrieve params correctly from Event" do
@@ -113,7 +122,7 @@ describe "jdbc" do
         plugin.run(queue)
       end
       sleep 3
-      plugin.close
+      plugin.stop
       runner.kill
       runner.join
       expect(queue.size).to eq(2)
@@ -139,7 +148,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.close
+      plugin.stop
     end
 
     it "should fetch all rows" do
@@ -166,7 +175,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.close
+      plugin.stop
     end
 
     it "should successfully iterate table with respect to field values" do
@@ -205,7 +214,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.close
+      plugin.stop
     end
 
     it "should respect last run metadata" do
@@ -231,7 +240,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.close
+      plugin.stop
     end
 
     it "should ignore last run metadata if :clean_run set to true" do
@@ -253,7 +262,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.close
+      plugin.stop
     end
 
     it "should not save state if :record_last_run is false" do
@@ -281,7 +290,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.close
+      plugin.stop
     end
 
     it "should fetch all rows" do
