@@ -163,13 +163,14 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       @scheduler.cron @schedule do
         execute_query(queue)
       end
+
       @scheduler.join
     else
       execute_query(queue)
     end
   end # def run
 
-  def close
+  def stop
     @scheduler.stop if @scheduler
 
     # update state file for next run
@@ -178,7 +179,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     end
 
     close_jdbc_connection
-  end # def close
+  end
 
   private
 
