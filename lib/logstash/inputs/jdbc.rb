@@ -2,6 +2,8 @@
 require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc"
+require "logstash/plugin_mixins/jdbcConnection"
+require "logstash/inputs/statement"
 require "yaml" # persistence
 
 # This plugin was created as a way to ingest data in any database
@@ -35,11 +37,13 @@ require "yaml" # persistence
 #
 # ==== State
 #
-# The plugin will persist the `sql_last_start` parameter in the form of a 
-# metadata file stored in the configured `last_run_metadata_path`. Upon shutting down, 
-# this file will be updated with the current value of `sql_last_start`. Next time
-# the pipeline starts up, this value will be updated by reading from the file. If 
-# `clean_run` is set to true, this value will be ignored and `sql_last_start` will be
+# The plugin will persist some data from the pipeline. The data to be store can be
+# configure in `persistence_data` parameter plus `sql_last_start` parameter a those
+# values will be store in the form of a metadata file stored in the configured
+# `file.path`. Upon shutting down, this file will be updated with the data collected
+# from the pipeline and the current value of `sql_last_start`. Next time
+# the pipeline starts up, this value will be updated by reading from the file. If the
+# store file doesn't exist, this value will be ignored and `sql_last_start` will be
 # set to Jan 1, 1970, as if no query has ever been executed.
 #
 # ==== Dealing With Large Result-sets
@@ -65,13 +69,20 @@ require "yaml" # persistence
 # ----------------------------------
 # input {
 #   jdbc {
-#     jdbc_driver_library => "mysql-connector-java-5.1.36-bin.jar"
-#     jdbc_driver_class => "com.mysql.jdbc.Driver"
-#     jdbc_connection_string => "jdbc:mysql://localhost:3306/mydb"
-#     jdbc_user => "mysql"
-#     parameters => { "favorite_artist" => "Beethoven" }
-#     schedule => "* * * * *"
-#     statement => "SELECT * from songs where artist = :favorite_artist"
+#     connection => {
+#       jdbc_driver_library    => "mysql-connector-java-5.1.36-bin.jar"
+#       jdbc_driver_class      => "com.mysql.jdbc.Driver"
+#       jdbc_connection_string => "jdbc:mysql://localhost:3306/mydb"
+#       jdbc_user              => "mysql"
+#     }
+#
+#     statements => [
+#                     {
+#                       query      => "SELECT * from songs where artist = :favorite_artist"
+#                       parameters => { "favorite_artist" => "Beethoven" }
+#                       schedule   => "* * * * *"
+#                     }
+#                   ]
 #   }
 # }
 # ----------------------------------
@@ -79,7 +90,7 @@ require "yaml" # persistence
 # ==== Configuring SQL statement
 # 
 # A sql statement is required for this input. This can be passed-in via a 
-# statement option in the form of a string, or read from a file (`statement_filepath`). File 
+# query option in the form of a string, or read from a file (`file.path`). File
 # option is typically used when the SQL statement is large or cumbersome to supply in the config.
 # The file option only supports one SQL statement. The plugin will only accept one of the options.
 # It cannot read a statement from a file as well as from the `statement` configuration parameter.
@@ -94,14 +105,86 @@ require "yaml" # persistence
 #  before any query is run, and updated accordingly after first query is run.
 # |==========================================================
 #
+# It's possivel to configure another parameters to be store and used within your queries.
+# To do that, parameters `persistence_data` must be provided with the list of fields to Store.
+#
 class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   include LogStash::PluginMixins::Jdbc
   config_name "jdbc"
 
   # If undefined, Logstash will complain, even if codec is unused.
-  default :codec, "plain" 
+  default :codec, "plain"
+
+  # Connection Settings
+  # 
+  # This Settings will be used to connect to the Database to run the provide query.
+  # For example:
+  #
+  # [source, ruby]
+  # ----------------------------------
+  # connection => {
+  #                 jdbc_driver_library      => "mysql-connector-java-5.1.36-bin.jar"
+  #                 jdbc_driver_class        => "com.mysql.jdbc.Driver"
+  #                 jdbc_connection_string   => "jdbc:mysql://localhost:3306/mydb"
+  #                 jdbc_user                => "mysql"
+  #                 jdbc_password            => ""
+  #                 jdbc_paging_enabled      => ""
+  #                 jdbc_page_size           => ""
+  #                 jdbc_fetch_size          => ""
+  #                 jdbc_validate_connection => ""
+  #                 jdbc_validation_timeout  => ""
+  #               }
+  # ----------------------------------
+  #
+  # Required Parameters
+  #
+  #   jdbc_driver_library = JDBC driver library path to third party driver library.
+  #   jdbc_driver_class = JDBC driver class to load, for example "oracle.jdbc.OracleDriver" or "org.apache.derby.jdbc.ClientDriver"
+  #   jdbc_connection_string = JDBC connection string
+  #   jdbc_user = JDBC user
+  #
+  # Options Parameters and Default Values
+  #
+  #   jdbc_password = JDBC password
+  #
+  #   JDBC enable paging
+  #
+  #     This will cause a sql statement to be broken up into multiple queries.
+  #     Each query will use limits and offsets to collectively retrieve the full
+  #     result-set. The limit size is set with `jdbc_page_size`.
+  #
+  #     Be aware that ordering is not guaranteed between queries.
+  #
+  #     jdbc_paging_enabled = Enable Paging (default => false)
+  #     jdbc_page_size = Page Size (default => 100000)
+  #     jdbc_fetch_size = Fetch size. If not provided, respective driver's default will be used
+  #
+  #
+  #   Connection pool configuration.
+  #
+  #      jdbc_validate_connection = Validate connection before use. (default => false)
+  #      jdbc_validation_timeout = How often to validate a connection (in seconds) (default => 3600)
+  config :connection, :validate => :hash
 
   # Statement to execute
+  #
+  # [source, ruby]
+  # ----------------------------------
+  # statements => [
+  #                 {
+  #                   query                   => "SELECT * from songs where artist = :favorite_artist"
+  #                   query_filepath          => ""
+  #                   parameters              => { "favorite_artist" => "Beethoven" }
+  #                   schedule                => "* * * * *"
+  #                   persistence_data        => []
+  #                   persistence_store_type  => "File"
+  #                   file                    => {
+  #                                                path => "/home/kintas/Tests/LogStash_Suite/logstash-1.5.2/persistData.store"
+  #                                              }
+  #                   clear_persistence_store => false
+  #                 }
+  #               ]
+  # ----------------------------------
   #
   # To use parameters, use named parameter syntax.
   # For example:
@@ -113,54 +196,48 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   #
   # here, ":target_id" is a named parameter. You can configure named parameters
   # with the `parameters` setting.
-  config :statement, :validate => :string
-
-  # Path of file containing statement to execute
-  config :statement_filepath, :validate => :path
-
-  # Hash of query parameter, for example `{ "target_id" => "321" }`
-  config :parameters, :validate => :hash, :default => {}
-
-  # Schedule of when to periodically run statement, in Cron format
-  # for example: "* * * * *" (execute query every minute, on the minute)
-  #
-  # There is no schedule by default. If no schedule is given, then the statement is run
-  # exactly once.
-  config :schedule, :validate => :string
-
-  # Path to file with last run time
-  config :last_run_metadata_path, :validate => :string, :default => "#{ENV['HOME']}/.logstash_jdbc_last_run"
-
   # Whether the previous run state should be preserved
-  config :clean_run, :validate => :boolean, :default => false
+  config :statements, :validate => :array
 
-  # Whether to save state or not in last_run_metadata_path
-  config :record_last_run, :validate => :boolean, :default => true
 
   public
 
   def register
     require "rufus/scheduler"
-    prepare_jdbc_connection
 
-    # load sql_last_start from file if exists
-    if @clean_run && File.exist?(@last_run_metadata_path)
-      File.delete(@last_run_metadata_path)
-    elsif File.exist?(@last_run_metadata_path)
-      @sql_last_start = YAML.load(File.read(@last_run_metadata_path))
+    @jdbcConn = LogStash::PluginMixins::JdbcConnection.new()
+    @jdbcConn.populate(@connection)
+
+    @stmts = LogStash::Inputs::Statement.new()
+    @statements.each do |stmt|
+      @stmts.populate(stmt)
     end
 
-    unless @statement.nil? ^ @statement_filepath.nil?
-      raise(LogStash::ConfigurationError, "Must set either :statement or :statement_filepath. Only one may be set at a time.")
+    prepare_jdbc_connection(@jdbcConn)
+
+    if !@stmts.clear_persistence_store
+      if 'File'.casecmp(@stmts.persistence_store_type)
+        if File.exist?(@stmts.file['path'])
+          @persistenceData = YAML.load(File.read(@stmts.file['path']))
+        else
+          @persistenceData = {}
+          @persistenceData['sql_last_start'] = Time.at(0).utc
+        end
+      else
+        # TODO: Program another place to Store Persistence Data, ex: ElasticSearch
+        @persistenceData = {}
+        @persistenceData['sql_last_start'] = Time.at(0).utc
+      end
     end
 
-    @statement = File.read(@statement_filepath) if @statement_filepath
   end # def register
 
   def run(queue)
-    if @schedule
+    if @stmts.schedule
       @scheduler = Rufus::Scheduler.new
-      @scheduler.cron @schedule do
+      @scheduler.cron @stmts.schedule do
+        # Only for Debug (not to wait 1min between runs
+        #@scheduler.every '10s' do
         execute_query(queue)
       end
       @scheduler.join
@@ -173,8 +250,11 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     @scheduler.stop if @scheduler
 
     # update state file for next run
-    if @record_last_run
-      File.write(@last_run_metadata_path, YAML.dump(@sql_last_start))
+    if !@stmts.clear_persistence_store
+      if 'File'.casecmp(@stmts.persistence_store_type)
+        File.write(@stmts.file['path'], YAML.dump(@persistenceData))
+        #TODO: Program another place to Store Persistence Data, ex: ElasticSearch
+      end
     end
 
     close_jdbc_connection
@@ -183,12 +263,27 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   private
 
   def execute_query(queue)
-    # update default parameters
-    @parameters['sql_last_start'] = @sql_last_start
-    execute_statement(@statement, @parameters) do |row|
+    # update default parameters and merge with Persistence Data
+    if !@persistenceData.nil?
+      queryParameters = @persistenceData.merge(@stmts.parameters)
+    else
+      queryParameters = @stmts.parameters
+    end
+
+    execute_statement(@jdbcConn, @stmts.query, queryParameters) do |row|
       event = LogStash::Event.new(row)
       decorate(event)
       queue << event
+
+      # After each Row processed. Update @persistenceData Hash
+      # Assuming a Ordered Query is provided
+      @persistenceData = {}
+      @stmts.persistence_data.each do |key|
+        @persistenceData[key] = row[key]
+      end
+
     end
+    @persistenceData['sql_last_start'] = Time.now.utc
+
   end
 end # class LogStash::Inputs::Jdbc
