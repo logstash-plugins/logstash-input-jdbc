@@ -169,7 +169,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     end
   end # def run
 
-  def teardown
+  def close
     @scheduler.stop if @scheduler
 
     # update state file for next run
@@ -178,7 +178,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     end
 
     close_jdbc_connection
-  end # def teardown
+  end # def close
 
   private
 

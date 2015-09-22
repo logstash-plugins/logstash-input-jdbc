@@ -33,12 +33,12 @@ describe "jdbc" do
 
     it "should register without raising exception" do
       expect { plugin.register }.to_not raise_error
-      plugin.teardown
+      plugin.close
     end
 
-    it "should teardown without raising exception" do
+    it "should close without raising exception" do
       plugin.register
-      expect { plugin.teardown }.to_not raise_error
+      expect { plugin.close }.to_not raise_error
     end
   end
 
@@ -69,7 +69,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.teardown
+      plugin.close
     end
 
     it "should read in statement from file" do
@@ -90,7 +90,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.teardown
+      plugin.close
     end
 
     it "should retrieve params correctly from Event" do
@@ -113,7 +113,7 @@ describe "jdbc" do
         plugin.run(queue)
       end
       sleep 3
-      plugin.teardown
+      plugin.close
       runner.kill
       runner.join
       expect(queue.size).to eq(2)
@@ -139,7 +139,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.teardown
+      plugin.close
     end
 
     it "should fetch all rows" do
@@ -166,7 +166,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.teardown
+      plugin.close
     end
 
     it "should successfully iterate table with respect to field values" do
@@ -205,7 +205,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.teardown
+      plugin.close
     end
 
     it "should respect last run metadata" do
@@ -231,7 +231,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.teardown
+      plugin.close
     end
 
     it "should ignore last run metadata if :clean_run set to true" do
@@ -253,7 +253,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.teardown
+      plugin.close
     end
 
     it "should not save state if :record_last_run is false" do
@@ -281,7 +281,7 @@ describe "jdbc" do
     end
 
     after do
-      plugin.teardown
+      plugin.close
     end
 
     it "should fetch all rows" do
