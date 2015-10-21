@@ -57,6 +57,37 @@ module LogStash::PluginMixins::Jdbc
     # Connection pool configuration.
     # How often to validate a connection (in seconds)
     config :jdbc_validation_timeout, :validate => :number, :default => 3600
+
+    # Connection pool configuration.
+    # The amount of seconds to wait to acquire a connection before raising a PoolTimeoutError (default 5)
+    config :jdbc_pool_timeout, :validate => :number, :default => 5
+
+    # General/Vendor-specific Sequel configuration options.
+    #
+    # An example of an optional connection pool configuration
+    #    max_connections - The maximum number of connections the connection pool
+    #
+    # examples of vendor-specific options can be found in this
+    # documentation page: https://github.com/jeremyevans/sequel/blob/master/doc/opening_databases.rdoc
+    config :sequel_opts, :validate => :hash, :default => {}
+  end
+
+  private
+  def jdbc_connect
+    opts = {
+      :user => @jdbc_user,
+      :password => @jdbc_password,
+      :pool_timeout => @jdbc_pool_timeout
+    }.merge(@sequel_opts)
+    begin
+      Sequel.connect(@jdbc_connection_string, opts=opts)
+    rescue Sequel::PoolTimeout => e
+      @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded.")
+      raise e
+    rescue Sequel::Error => e
+      @logger.error("Unable to connect to database", :error_message => e.message)
+      raise e
+    end
   end
 
   public
@@ -76,7 +107,7 @@ module LogStash::PluginMixins::Jdbc
                 end
       raise LogStash::ConfigurationError, "#{e}. #{message}"
     end
-    @database = Sequel.connect(@jdbc_connection_string, :user=> @jdbc_user, :password=>  @jdbc_password.nil? ? nil : @jdbc_password.value)
+    @database = jdbc_connect()
     @database.extension(:pagination)
     if @jdbc_validate_connection
       @database.extension(:connection_validator)
