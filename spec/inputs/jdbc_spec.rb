@@ -301,4 +301,37 @@ describe "jdbc" do
       expect { plugin.register }.to raise_error(LogStash::ConfigurationError)
     end
   end
+
+  context "when timing out on connection" do
+    let(:settings) do
+      {
+        "statement" => "SELECT * FROM test_table",
+        "jdbc_pool_timeout" => 0,
+        "jdbc_connection_string" => 'mock://localhost:1527/db',
+        "sequel_opts" => {
+          "max_connections" => 1
+        }
+      }
+    end
+
+    it "should raise PoolTimeout error" do
+      plugin.register
+      db = plugin.instance_variable_get(:@database)
+      expect(db.pool.instance_variable_get(:@timeout)).to eq(0)
+      expect(db.pool.instance_variable_get(:@max_size)).to eq(1)
+
+      q, q1 = Queue.new, Queue.new
+      t = Thread.new{db.pool.hold{|c| q1.push nil; q.pop}}
+      q1.pop
+      expect{db.pool.hold {|c|}}.to raise_error(Sequel::PoolTimeout)
+      q.push nil
+      t.join
+    end
+
+    it "should log error message" do
+      allow(Sequel).to receive(:connect).and_raise(Sequel::PoolTimeout)
+      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded.")
+      expect { plugin.register }.to raise_error(Sequel::PoolTimeout)
+    end
+  end
 end
