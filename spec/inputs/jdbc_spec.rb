@@ -35,6 +35,12 @@ describe LogStash::Inputs::Jdbc do
       plugin.stop
     end
 
+    it "should register with password set" do
+      mixin_settings['jdbc_password'] = 'pass'
+      expect { plugin.register }.to_not raise_error
+      plugin.stop
+    end
+
     it "should stop without raising exception" do
       plugin.register
       expect { plugin.stop }.to_not raise_error
