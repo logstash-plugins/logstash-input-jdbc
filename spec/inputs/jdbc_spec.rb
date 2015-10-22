@@ -36,9 +36,10 @@ describe "jdbc" do
       plugin.teardown
     end
 
-    it "should teardown without raising exception" do
-      plugin.register
-      expect { plugin.teardown }.to_not raise_error
+    it "should register with password set" do
+      mixin_settings['jdbc_password'] = 'pass'
+      expect { plugin.register }.to_not raise_error
+      plugin.stop
     end
   end
 

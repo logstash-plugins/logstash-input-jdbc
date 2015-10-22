@@ -76,7 +76,7 @@ module LogStash::PluginMixins::Jdbc
   def jdbc_connect
     opts = {
       :user => @jdbc_user,
-      :password => @jdbc_password,
+      :password => @jdbc_password.nil? ? nil : @jdbc_password.value,
       :pool_timeout => @jdbc_pool_timeout
     }.merge(@sequel_opts)
     begin
