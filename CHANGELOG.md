@@ -1,3 +1,7 @@
+## 2.0.4
+  - [#70](https://github.com/logstash-plugins/logstash-input-jdbc/pull/70) prevents multiple queries from being run at the same time
+  - [#69](https://github.com/logstash-plugins/logstash-input-jdbc/pull/69) pass password as string to Sequel
+
 ## 2.0.3
  - Added ability to configure timeout
  - Added catch-all configuration option for any other options that Sequel lib supports
