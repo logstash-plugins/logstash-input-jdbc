@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'logstash-input-jdbc'
-  s.version         = '2.0.3'
+  s.version         = '2.0.4'
   s.licenses = ['Apache License (2.0)']
   s.summary = "This example input streams a string at a definable interval."
   s.description = "This gem is a logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/plugin install gemname. This gem is not a stand-alone program"
