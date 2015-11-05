@@ -23,7 +23,9 @@ module LogStash::PluginMixins::Jdbc
     # If not provided, Plugin will look for the driver class in the Logstash Java classpath.
     config :jdbc_driver_library, :validate => :path
 
-    # JDBC driver class to load, for example "oracle.jdbc.OracleDriver" or "org.apache.derby.jdbc.ClientDriver"
+    # JDBC driver class to load, for exmaple, "org.apache.derby.jdbc.ClientDriver"
+    # NB per https://github.com/logstash-plugins/logstash-input-jdbc/issues/43 if you are using
+    # the Oracle JDBC driver (ojdbc6.jar) the correct `jdbc_driver_class` is `"Java::oracle.jdbc.driver.OracleDriver"`
     config :jdbc_driver_class, :validate => :string, :required => true
 
     # JDBC connection string
