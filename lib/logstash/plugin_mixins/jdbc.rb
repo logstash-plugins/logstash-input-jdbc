@@ -143,14 +143,12 @@ module LogStash::PluginMixins::Jdbc
       if @jdbc_paging_enabled
         query.each_page(@jdbc_page_size) do |paged_dataset|
           paged_dataset.each do |row|
-            #Stringify row keys
-            yield Hash[row.map { |k, v| [k.to_s, v] }]
+            yield extract_values_from(row)
           end
         end
       else
         query.each do |row|
-          #Stringify row keys
-          yield Hash[row.map { |k, v| [k.to_s, v] }]
+          yield extract_values_from(row)
         end
       end
       success = true
@@ -171,6 +169,22 @@ module LogStash::PluginMixins::Jdbc
         hash[k.to_sym] = v
       end
       hash
+    end
+  end
+
+  private
+  #Stringify row keys and decorate values when necessary
+  def extract_values_from(row)
+    Hash[row.map { |k, v| [k.to_s, decorate_value(v)] }]
+  end
+
+  private
+  def decorate_value(value)
+    if value.is_a?(Time)
+      # transform it to LogStash::Timestamp as required by LS
+      LogStash::Timestamp.new(value)
+    else
+      value  # no-op
     end
   end
 end
