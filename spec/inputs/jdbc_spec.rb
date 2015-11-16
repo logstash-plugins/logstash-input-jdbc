@@ -19,7 +19,8 @@ describe LogStash::Inputs::Jdbc do
     Jdbc::Derby.load_driver
     db.create_table :test_table do
       DateTime :created_at
-      Integer :num
+      Integer  :num
+      DateTime :custom_time
     end
   end
 
@@ -96,7 +97,7 @@ describe LogStash::Inputs::Jdbc do
     let(:settings) do
       {
         "statement" => "SELECT :num_param as num_param FROM SYSIBM.SYSDUMMY1",
-        "parameters" => {"num_param" => 10}
+        "parameters" => { "num_param" => 10}
       }
     end
 
@@ -159,7 +160,7 @@ describe LogStash::Inputs::Jdbc do
 
     it "should fetch all rows" do
       num_rows.times do
-        db[:test_table].insert(:num => 1, :created_at => Time.now.utc)
+        db[:test_table].insert(:num => 1, :custom_time => Time.now.utc, :created_at => Time.now.utc)
       end
 
       plugin.run(queue)
@@ -167,6 +168,35 @@ describe LogStash::Inputs::Jdbc do
       expect(queue.size).to eq(num_rows)
     end
 
+  end
+
+  context "when fetching time data" do
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * from test_table",
+      }
+    end
+
+    let(:num_rows) { 10 }
+
+    before do
+      num_rows.times do
+        db[:test_table].insert(:num => 1, :custom_time => Time.now.utc, :created_at => Time.now.utc)
+      end
+
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should convert it to LogStash::Timestamp " do
+      plugin.run(queue)
+      event = queue.pop
+      expect(event["custom_time"]).to be_a(LogStash::Timestamp)
+    end
   end
 
   context "when iteratively running plugin#run" do
@@ -289,7 +319,7 @@ describe LogStash::Inputs::Jdbc do
 
     before do
       num_rows.times do
-        db[:test_table].insert(:num => 1, :created_at => Time.now.utc)
+        db[:test_table].insert(:num => 1, :custom_time => Time.now.utc, :created_at => Time.now.utc)
       end
 
       plugin.register
