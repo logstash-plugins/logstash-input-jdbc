@@ -137,7 +137,7 @@ module LogStash::PluginMixins::Jdbc
     begin 
       parameters = symbolized_params(parameters)
       query = @database[statement, parameters]
-      @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters)
+      @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
       @sql_last_start = Time.now.utc
 
       if @jdbc_paging_enabled
