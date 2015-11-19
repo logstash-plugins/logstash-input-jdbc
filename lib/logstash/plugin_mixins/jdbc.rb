@@ -18,10 +18,11 @@ module LogStash::PluginMixins::Jdbc
 
   public
   def setup_jdbc_config
-    # JDBC driver library path to third party driver library.
+    # JDBC driver library path to third party driver library. In case of multiple libraries being
+    # required you can pass them separated by a comma.
     #
     # If not provided, Plugin will look for the driver class in the Logstash Java classpath.
-    config :jdbc_driver_library, :validate => :path
+    config :jdbc_driver_library, :validate => :string
 
     # JDBC driver class to load, for exmaple, "org.apache.derby.jdbc.ClientDriver"
     # NB per https://github.com/logstash-plugins/logstash-input-jdbc/issues/43 if you are using
@@ -96,12 +97,20 @@ module LogStash::PluginMixins::Jdbc
     end
   end
 
+  private
+  def load_drivers(drivers)
+    drivers.each do |driver|
+      require driver
+    end
+  end
+
   public
   def prepare_jdbc_connection
     require "java"
     require "sequel"
     require "sequel/adapters/jdbc"
-    require @jdbc_driver_library if @jdbc_driver_library
+    load_drivers(@jdbc_driver_library.split(",")) if @jdbc_driver_library
+    
     begin
       Sequel::JDBC.load_driver(@jdbc_driver_class)
     rescue Sequel::AdapterNotFound => e
