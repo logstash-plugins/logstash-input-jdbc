@@ -42,6 +42,20 @@ describe LogStash::Inputs::Jdbc do
       plugin.stop
     end
 
+    it "should load all drivers when passing an array" do
+      mixin_settings['jdbc_driver_library'] = '/foo/bar,/bar/foo'
+      expect(plugin).to receive(:load_drivers).with(['/foo/bar', '/bar/foo'])
+      plugin.register
+      plugin.stop
+    end
+
+    it "should load all drivers when using a single value" do
+      mixin_settings['jdbc_driver_library'] = '/foo/bar'
+      expect(plugin).to receive(:load_drivers).with(['/foo/bar'])
+      plugin.register
+      plugin.stop
+    end
+
     it "should stop without raising exception" do
       plugin.register
       expect { plugin.stop }.to_not raise_error
