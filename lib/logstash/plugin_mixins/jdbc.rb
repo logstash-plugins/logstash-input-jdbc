@@ -72,6 +72,9 @@ module LogStash::PluginMixins::Jdbc
     # examples of vendor-specific options can be found in this
     # documentation page: https://github.com/jeremyevans/sequel/blob/master/doc/opening_databases.rdoc
     config :sequel_opts, :validate => :hash, :default => {}
+
+    # Log level at which to log SQL queries. The default value is info.
+    config :sql_log_level, :validate => :string, :default => "info"
   end
 
   private
@@ -122,7 +125,7 @@ module LogStash::PluginMixins::Jdbc
       #TODO return false and let the plugin raise a LogStash::ConfigurationError
       raise e
     end
-
+    @database.sql_log_level = @sql_log_level.to_sym
     @sql_last_start = Time.at(0).utc
   end # def prepare_jdbc_connection
 
