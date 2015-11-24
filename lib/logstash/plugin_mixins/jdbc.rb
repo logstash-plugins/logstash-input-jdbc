@@ -73,8 +73,9 @@ module LogStash::PluginMixins::Jdbc
     # documentation page: https://github.com/jeremyevans/sequel/blob/master/doc/opening_databases.rdoc
     config :sequel_opts, :validate => :hash, :default => {}
 
-    # Log level at which to log SQL queries. The default value is info.
-    config :sql_log_level, :validate => :string, :default => "info"
+    # Log level at which to log SQL queries, the accepted values are the common ones fatal, error, warn,
+    # info and debug. The default value is info.
+    config :sql_log_level, :validate => [ "fatal", "error", "warn", "info", "debug" ], :default => "info"
   end
 
   private
