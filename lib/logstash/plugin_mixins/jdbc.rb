@@ -105,16 +105,15 @@ module LogStash::PluginMixins::Jdbc
     loop do
       retry_attempts -= 1
       begin
-        Sequel.connect(@jdbc_connection_string, opts=opts)
-        connection_succeeded = true
+        return Sequel.connect(@jdbc_connection_string, opts=opts)
       rescue Sequel::PoolTimeout => e
         if retry_attempts == 0
-          @logger.error("Failed to connect to database #{@max_connection_attempts} times. #{@jdbc_pool_timeout} second timeout exceeded.")
+          @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded.")
           raise e
         end
       rescue Sequel::Error => e
         if retry_attempts == 0
-          @logger.error("Unable to connect to database #{@max_connection_attempts} times", :error_message => e.message)
+          @logger.error("Unable to connect to database", :error_message => e.message)
           raise e
         end
       end
