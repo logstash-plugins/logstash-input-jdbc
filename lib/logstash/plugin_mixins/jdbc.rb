@@ -90,9 +90,13 @@ module LogStash::PluginMixins::Jdbc
     config :sql_log_level, :validate => [ "fatal", "error", "warn", "info", "debug" ], :default => "info"
 
     # Maximum number of times to try connecting to database
+<<<<<<< 6bf724531e0d814113c9421d7223dd243ee87de9
     config :connection_retry_attempts, :validate => :number, :default => 1
     # Number of seconds to sleep between connection attempts
     config :connection_retry_attempts_wait_time, :validate => :number, :default => 0.5
+=======
+    config :max_connection_attempts, :validate => :number, :default => 1
+>>>>>>> Added retry connection feature
   end
 
   private
