@@ -101,7 +101,6 @@ module LogStash::PluginMixins::Jdbc
       :pool_timeout => @jdbc_pool_timeout
     }.merge(@sequel_opts)
     retry_attempts = @max_connection_attempts
-    connection_succeeded = false
     loop do
       retry_attempts -= 1
       begin
@@ -117,7 +116,6 @@ module LogStash::PluginMixins::Jdbc
           raise e
         end
       end
-      break if connection_succeeded or retry_attempts == 0
     end
   end
 
