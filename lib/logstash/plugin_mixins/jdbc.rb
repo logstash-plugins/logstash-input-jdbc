@@ -88,6 +88,9 @@ module LogStash::PluginMixins::Jdbc
     # Log level at which to log SQL queries, the accepted values are the common ones fatal, error, warn,
     # info and debug. The default value is info.
     config :sql_log_level, :validate => [ "fatal", "error", "warn", "info", "debug" ], :default => "info"
+
+    # Maximum number of times to try connecting to database
+    config :max_connection_attempts, :validate => :number, :default => 1
   end
 
   private
@@ -97,14 +100,25 @@ module LogStash::PluginMixins::Jdbc
       :password => @jdbc_password.nil? ? nil : @jdbc_password.value,
       :pool_timeout => @jdbc_pool_timeout
     }.merge(@sequel_opts)
-    begin
-      Sequel.connect(@jdbc_connection_string, opts=opts)
-    rescue Sequel::PoolTimeout => e
-      @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded.")
-      raise e
-    rescue Sequel::Error => e
-      @logger.error("Unable to connect to database", :error_message => e.message)
-      raise e
+    retry_attempts = @max_connection_attempts
+    connection_succeeded = false
+    loop do
+      retry_attempts -= 1
+      begin
+        Sequel.connect(@jdbc_connection_string, opts=opts)
+        connection_succeeded = true
+      rescue Sequel::PoolTimeout => e
+        if retry_attempts == 0
+          @logger.error("Failed to connect to database #{@max_connection_attempts} times. #{@jdbc_pool_timeout} second timeout exceeded.")
+          raise e
+        end
+      rescue Sequel::Error => e
+        if retry_attempts == 0
+          @logger.error("Unable to connect to database #{@max_connection_attempts} times", :error_message => e.message)
+          raise e
+        end
+      end
+      break if connection_succeeded or retry_attempts == 0
     end
   end
 
