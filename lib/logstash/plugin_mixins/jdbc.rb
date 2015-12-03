@@ -100,7 +100,11 @@ module LogStash::PluginMixins::Jdbc
   private
   def load_drivers(drivers)
     drivers.each do |driver|
-      require driver
+      begin
+        require driver
+      rescue => e
+        @logger.error("Failed to load #{driver}", :exception => e)
+      end
     end
   end
 
