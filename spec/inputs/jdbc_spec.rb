@@ -7,7 +7,10 @@ require "timecop"
 require "stud/temporary"
 
 describe LogStash::Inputs::Jdbc do
-  let(:mixin_settings) { {"jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver", "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"} }
+  let(:mixin_settings) do
+    { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver", 
+      "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"}
+  end
   let(:settings) { {} }
   let(:plugin) { LogStash::Inputs::Jdbc.new(mixin_settings.merge(settings)) }
   let(:queue) { Queue.new }
@@ -379,4 +382,37 @@ describe LogStash::Inputs::Jdbc do
       expect { plugin.register }.to raise_error(Sequel::PoolTimeout)
     end
   end
+
+  context "when using logging" do
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * from test_table", "sql_log_level" => "debug"
+      }
+    end
+
+    let(:num_rows) { 5 }
+
+    before do
+      plugin.instance_variable_set("@logger", logger)
+      allow(logger).to receive(:debug?)
+      num_rows.times do
+        db[:test_table].insert(:num => 1)
+      end
+
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    let(:logger) { double("logger") }
+
+    it "should report the staments to logging" do
+      expect(logger).to receive(:debug).with(kind_of(String)).once
+      plugin.run(queue)
+    end
+  end
+
 end

@@ -127,6 +127,7 @@ module LogStash::PluginMixins::Jdbc
       raise e
     end
     @database.sql_log_level = @sql_log_level.to_sym
+    @database.logger = @logger
     @sql_last_start = Time.at(0).utc
   end # def prepare_jdbc_connection
 
