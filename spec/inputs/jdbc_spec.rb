@@ -819,6 +819,7 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+<<<<<<< 1704b39ca0b4986f8e8d7810379e8bdc16c6aeeb
   context "when specifying connection_retry_attempts" do
     let(:settings) { {"statement" => "SELECT 1 as col1 FROM test_table"} }
 
@@ -836,5 +837,21 @@ describe LogStash::Inputs::Jdbc do
       expect { plugin.register }.to_not raise_error
       plugin.stop
     end
+=======
+  context "when specifying maximum_connection_attempts" do
+    let(:settings) { {"statement" => "SELECT 1 as col1 FROM test_table"} }
+
+    it "should register without raising exception" do
+      mixin_settings['maximum_connection_attempts'] = 5
+      expect { plugin.register }.to_not raise_error
+      plugin.stop
+    end
+
+    it "should stop without raising exception" do
+      mixin_settings['maximum_connection_attempts'] = 3
+      plugin.register
+      expect { plugin.stop }.to_not raise_error
+    end
+>>>>>>> Added tests for retry connection feature
   end
 end
