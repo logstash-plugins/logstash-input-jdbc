@@ -746,7 +746,7 @@ describe LogStash::Inputs::Jdbc do
 
     it "should log error message" do
       allow(Sequel).to receive(:connect).and_raise(Sequel::PoolTimeout)
-      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded.")
+      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Tried 1 times.")
       expect { plugin.register }.to raise_error(Sequel::PoolTimeout)
     end
   end
@@ -819,19 +819,22 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
-  context "when specifying maximum_connection_attempts" do
+  context "when specifying connection_retry_attempts" do
     let(:settings) { {"statement" => "SELECT 1 as col1 FROM test_table"} }
 
-    it "should register without raising exception" do
-      mixin_settings['maximum_connection_attempts'] = 5
-      expect { plugin.register }.to_not raise_error
-      plugin.stop
+    it "should try to connect connection_retry_attempts times" do
+      mixin_settings['connection_retry_attempts'] = 2
+      mixin_settings['jdbc_pool_timeout'] = 0
+      allow(Sequel).to receive(:connect).and_raise(Sequel::PoolTimeout)
+      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Trying again.")
+      expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Tried 2 times.")
+      expect { plugin.register }.to raise_error(Sequel::PoolTimeout)
     end
 
-    it "should stop without raising exception" do
-      mixin_settings['maximum_connection_attempts'] = 3
-      plugin.register
-      expect { plugin.stop }.to_not raise_error
+    it "should not fail when passed a non-positive value" do
+      mixin_settings['connection_retry_attempts'] = -2
+      expect { plugin.register }.to_not raise_error
+      plugin.stop
     end
   end
 end

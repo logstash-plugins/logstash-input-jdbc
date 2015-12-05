@@ -90,7 +90,9 @@ module LogStash::PluginMixins::Jdbc
     config :sql_log_level, :validate => [ "fatal", "error", "warn", "info", "debug" ], :default => "info"
 
     # Maximum number of times to try connecting to database
-    config :maximum_connection_attempts, :validate => :number, :default => 1
+    config :connection_retry_attempts, :validate => :number, :default => 1
+    # Number of seconds to sleep between connection attempts
+    config :connection_retry_attempts_wait_time, :validate => :number, :default => 0.5
   end
 
   private
@@ -100,22 +102,27 @@ module LogStash::PluginMixins::Jdbc
       :password => @jdbc_password.nil? ? nil : @jdbc_password.value,
       :pool_timeout => @jdbc_pool_timeout
     }.merge(@sequel_opts)
-    retry_attempts = @maximum_connection_attempts
+    retry_attempts = @connection_retry_attempts
     loop do
       retry_attempts -= 1
       begin
         return Sequel.connect(@jdbc_connection_string, opts=opts)
       rescue Sequel::PoolTimeout => e
         if retry_attempts <= 0
-          @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded.")
+          @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Tried #{@connection_retry_attempts} times.")
           raise e
+        else
+          @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Trying again.")  
         end
       rescue Sequel::Error => e
         if retry_attempts <= 0
-          @logger.error("Unable to connect to database", :error_message => e.message)
+          @logger.error("Unable to connect to database. Tried #{@connection_retry_attempts} times", :error_message => e.message, )
           raise e
+        else
+          @logger.error("Unable to connect to database. Trying again", :error_message => e.message)
         end
       end
+      sleep(@connection_retry_attempts_wait_time)
     end
   end
 
