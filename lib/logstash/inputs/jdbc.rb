@@ -35,8 +35,8 @@ require "yaml" # persistence
 #
 # ==== State
 #
-# The plugin will persist the `sql_last_start` parameter in the form of a
-# metadata file stored in the configured `last_run_metadata_path`. Upon shutting down,
+# The plugin will persist the `sql_last_start` parameter in the form of a 
+# metadata file stored in the configured `last_run_metadata_path`. Upon query execution, 
 # this file will be updated with the current value of `sql_last_start`. Next time
 # the pipeline starts up, this value will be updated by reading from the file. If
 # `clean_run` is set to true, this value will be ignored and `sql_last_start` will be
@@ -165,21 +165,18 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       @scheduler = Rufus::Scheduler.new(:max_work_threads => 1)
       @scheduler.cron @schedule do
         execute_query(queue)
+        update_state_file
       end
 
       @scheduler.join
     else
       execute_query(queue)
+      update_state_file
     end
   end # def run
 
   def stop
     @scheduler.stop if @scheduler
-
-    # update state file for next run
-    if @record_last_run
-      File.write(@last_run_metadata_path, YAML.dump(@sql_last_start))
-    end
 
     close_jdbc_connection
   end
@@ -195,4 +192,11 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       queue << event
     end
   end
+  
+  def update_state_file
+    if @record_last_run
+      File.write(@last_run_metadata_path, YAML.dump(@sql_last_start))
+    end
+  end
+
 end # class LogStash::Inputs::Jdbc
