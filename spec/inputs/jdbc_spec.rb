@@ -5,10 +5,12 @@ require "sequel"
 require "sequel/adapters/jdbc"
 require "timecop"
 require "stud/temporary"
+require "time"
+require "date"
 
 describe LogStash::Inputs::Jdbc do
   let(:mixin_settings) do
-    { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver", 
+    { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
       "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"}
   end
   let(:settings) { {} }
@@ -213,6 +215,80 @@ describe LogStash::Inputs::Jdbc do
       plugin.run(queue)
       event = queue.pop
       expect(event["custom_time"]).to be_a(LogStash::Timestamp)
+    end
+  end
+
+  context "when fetching time data with jdbc_default_timezone set" do
+    let(:mixin_settings) do
+      { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
+        "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true",
+        "jdbc_default_timezone" => "America/Chicago"
+      }
+    end
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * from test_table",
+      }
+    end
+
+    let(:num_rows) { 10 }
+
+    before do
+      stub_const('ENV', ENV.to_hash.merge('TZ' => 'UTC'))
+      num_rows.times do
+        db[:test_table].insert(:num => 1, :custom_time => "2015-01-01 12:00:00", :created_at => Time.now.utc)
+      end
+
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should convert the time to reflect the timezone " do
+      plugin.run(queue)
+      event = queue.pop
+      # This reflects a 6 hour time difference between UTC and America/Chicago
+      expect(event["custom_time"].time).to eq(Time.iso8601("2015-01-01T18:00:00Z"))
+    end
+  end
+
+  context "when fetching time data without jdbc_default_timezone set" do
+
+    let(:mixin_settings) do
+      { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
+        "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"
+      }
+    end
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * from test_table",
+      }
+    end
+
+    let(:num_rows) { 1 }
+
+    before do
+      stub_const('ENV', ENV.to_hash.merge('TZ' => 'UTC'))
+      num_rows.times do
+        db.run "INSERT INTO test_table (created_at, num, custom_time) VALUES (TIMESTAMP('2015-01-01 12:00:00'), 1, TIMESTAMP('2015-01-01 12:00:00'))"
+      end
+
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should not convert the time to reflect the timezone " do
+      plugin.run(queue)
+      event = queue.pop
+      # With no timezone set, no change should occur
+      expect(event["custom_time"].time).to eq(Time.iso8601("2015-01-01T12:00:00Z"))
     end
   end
 
