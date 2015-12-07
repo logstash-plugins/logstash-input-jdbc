@@ -161,6 +161,40 @@ describe LogStash::Inputs::Jdbc do
 
   end
 
+  context "when scheduling and prevoius runs are to be preserved" do
+    let(:settings) do 
+      {
+        "statement" => "SELECT 1 as num_param FROM SYSIBM.SYSDUMMY1", 
+        "schedule" => "* * * * * UTC",
+        "last_run_metadata_path" => Stud::Temporary.pathname
+      }
+    end
+
+    let(:last_run_time) { Time.at(1).utc }
+
+    before do
+      plugin.register
+    end
+
+    it "should flush previous run metadata per query execution" do
+      Timecop.travel(Time.new(2000))
+      Timecop.scale(60)
+      runner = Thread.new do
+        plugin.run(queue)
+      end
+      sleep 1
+      for i in 0..1
+        sleep 1
+        updated_last_run = YAML.load(File.read(settings["last_run_metadata_path"]))
+        expect(updated_last_run).to be > last_run_time
+        last_run_time = updated_last_run
+      end
+
+      plugin.stop
+    end
+
+  end
+
   context "when iterating result-set via paging" do
 
     let(:settings) do
@@ -329,14 +363,14 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
-  context "when previous runs are to be respected" do
+  context "when previous runs are to be respected upon successful query execution" do
 
     let(:settings) do
-      { "statement" => "SELECT * FROM test_table",
+      { "statement" => "SELECT 1 as num_param FROM SYSIBM.SYSDUMMY1",
         "last_run_metadata_path" => Stud::Temporary.pathname }
     end
 
-    let(:last_run_time) { Time.at(1).utc }
+    let(:last_run_time) { Time.now.utc }
 
     before do
       File.write(settings["last_run_metadata_path"], YAML.dump(last_run_time))
@@ -348,6 +382,32 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "should respect last run metadata" do
+      plugin.run(queue)
+
+      expect(plugin.instance_variable_get("@sql_last_start")).to be > last_run_time
+    end
+  end
+
+   context "when previous runs are to be respected upon query faiure" do
+    let(:settings) do
+      { "statement" => "SELECT col from non_existent_table",
+        "last_run_metadata_path" => Stud::Temporary.pathname }
+    end
+
+    let(:last_run_time) { Time.now.utc }
+
+    before do
+      File.write(settings["last_run_metadata_path"], YAML.dump(last_run_time))
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should not respect last run metadata" do
+      plugin.run(queue)
+
       expect(plugin.instance_variable_get("@sql_last_start")).to eq(last_run_time)
     end
   end

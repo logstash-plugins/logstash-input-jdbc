@@ -175,8 +175,8 @@ module LogStash::PluginMixins::Jdbc
     begin
       parameters = symbolized_params(parameters)
       query = @database[statement, parameters]
+      sql_last_start = Time.now.utc
       @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
-      @sql_last_start = Time.now.utc
 
       if @jdbc_paging_enabled
         query.each_page(@jdbc_page_size) do |paged_dataset|
@@ -192,6 +192,8 @@ module LogStash::PluginMixins::Jdbc
       success = true
     rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
       @logger.warn("Exception when executing JDBC query", :exception => e)
+    else
+      @sql_last_start = sql_last_start
     end
     return success
   end
