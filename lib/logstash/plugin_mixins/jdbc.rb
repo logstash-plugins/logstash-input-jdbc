@@ -1,8 +1,10 @@
 # encoding: utf-8
 # TAKEN FROM WIIBAA
 require "logstash/config/mixin"
+require "time"
+require "date"
 
-# Tentative of abstracting JDBC logic to a mixin 
+# Tentative of abstracting JDBC logic to a mixin
 # for potential reuse in other plugins (input/output)
 module LogStash::PluginMixins::Jdbc
 
@@ -45,7 +47,7 @@ module LogStash::PluginMixins::Jdbc
     # result-set. The limit size is set with `jdbc_page_size`.
     #
     # Be aware that ordering is not guaranteed between queries.
-    config :jdbc_paging_enabled, :validate => :boolean, :default => false 
+    config :jdbc_paging_enabled, :validate => :boolean, :default => false
 
     # JDBC page size
     config :jdbc_page_size, :validate => :number, :default => 100000
@@ -64,6 +66,15 @@ module LogStash::PluginMixins::Jdbc
     # Connection pool configuration.
     # The amount of seconds to wait to acquire a connection before raising a PoolTimeoutError (default 5)
     config :jdbc_pool_timeout, :validate => :number, :default => 5
+
+    # Timezone conversion.
+    # SQL does not allow for timezone data in timestamp fields.  This plugin will automatically
+    # convert your SQL timestamp fields to Logstash timestamps, in relative UTC time in ISO8601 format.
+    #
+    # Using this setting will manually assign a specified timezone offset, instead
+    # of using the timezone setting of the local machine.  You must use a canonical
+    # timezone, *America/Denver*, for example.
+    config :jdbc_default_timezone, :validate => :string
 
     # General/Vendor-specific Sequel configuration options.
     #
@@ -114,12 +125,12 @@ module LogStash::PluginMixins::Jdbc
     require "sequel"
     require "sequel/adapters/jdbc"
     load_drivers(@jdbc_driver_library.split(",")) if @jdbc_driver_library
-    
+
     begin
       Sequel::JDBC.load_driver(@jdbc_driver_class)
     rescue Sequel::AdapterNotFound => e
       message = if @jdbc_driver_library.nil?
-                  ":jdbc_driver_library is not set, are you sure you included 
+                  ":jdbc_driver_library is not set, are you sure you included
                   the proper driver client libraries in your classpath?"
                 else
                   "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
@@ -128,6 +139,10 @@ module LogStash::PluginMixins::Jdbc
     end
     @database = jdbc_connect()
     @database.extension(:pagination)
+    if @jdbc_default_timezone
+      @database.extension(:named_timezones)
+      @database.timezone = @jdbc_default_timezone
+    end
     if @jdbc_validate_connection
       @database.extension(:connection_validator)
       @database.pool.connection_validation_timeout = @jdbc_validation_timeout
@@ -152,7 +167,7 @@ module LogStash::PluginMixins::Jdbc
   public
   def execute_statement(statement, parameters)
     success = false
-    begin 
+    begin
       parameters = symbolized_params(parameters)
       query = @database[statement, parameters]
       @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
@@ -177,9 +192,9 @@ module LogStash::PluginMixins::Jdbc
   end
 
   # Symbolize parameters keys to use with Sequel
-  private 
+  private
   def symbolized_params(parameters)
-    parameters.inject({}) do |hash,(k,v)| 
+    parameters.inject({}) do |hash,(k,v)|
       case v
       when LogStash::Timestamp
         hash[k.to_sym] = v.time
@@ -198,9 +213,14 @@ module LogStash::PluginMixins::Jdbc
 
   private
   def decorate_value(value)
+
     if value.is_a?(Time)
       # transform it to LogStash::Timestamp as required by LS
       LogStash::Timestamp.new(value)
+    elsif value.is_a?(DateTime)
+      # Manual timezone conversion detected.
+      # This is slower, so we put it in as a conditional case.
+      LogStash::Timestamp.new(Time.parse(value.to_s))
     else
       value  # no-op
     end

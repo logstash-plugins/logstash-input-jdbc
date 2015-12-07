@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "logstash-core", ">= 2.0.0.beta2", "< 3.0.0"
   s.add_runtime_dependency 'logstash-codec-plain'
   s.add_runtime_dependency 'sequel'
+  s.add_runtime_dependency 'tzinfo'
   s.add_runtime_dependency 'rufus-scheduler'
 
   s.add_development_dependency 'logstash-devutils'
