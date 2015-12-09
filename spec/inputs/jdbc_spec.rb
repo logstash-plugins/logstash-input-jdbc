@@ -9,6 +9,10 @@ require "time"
 require "date"
 
 describe LogStash::Inputs::Jdbc do
+  # This is a necessary change test-wide to guarantee that no local timezone
+  # is picked up.  It could be arbitrarily set to any timezone, but then the test
+  # would have to compensate differently.  That's why UTC is chosen.
+  ENV["TZ"] = "Etc/UTC"
   let(:mixin_settings) do
     { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
       "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"}
@@ -235,7 +239,6 @@ describe LogStash::Inputs::Jdbc do
     let(:num_rows) { 10 }
 
     before do
-      stub_const('ENV', ENV.to_hash.merge('TZ' => 'UTC'))
       num_rows.times do
         db[:test_table].insert(:num => 1, :custom_time => "2015-01-01 12:00:00", :created_at => Time.now.utc)
       end
@@ -256,7 +259,6 @@ describe LogStash::Inputs::Jdbc do
   end
 
   context "when fetching time data without jdbc_default_timezone set" do
-
     let(:mixin_settings) do
       { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
         "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"
@@ -272,7 +274,6 @@ describe LogStash::Inputs::Jdbc do
     let(:num_rows) { 1 }
 
     before do
-      stub_const('ENV', ENV.to_hash.merge('TZ' => 'UTC'))
       num_rows.times do
         db.run "INSERT INTO test_table (created_at, num, custom_time) VALUES (TIMESTAMP('2015-01-01 12:00:00'), 1, TIMESTAMP('2015-01-01 12:00:00'))"
       end
