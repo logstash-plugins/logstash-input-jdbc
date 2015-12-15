@@ -506,4 +506,39 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  describe "config option lowercase_column_names behaviour" do
+    let(:settings) { { "statement" => "SELECT * FROM ttt" } }
+    let(:events) { [] }
+
+    before do
+      db.create_table(:ttt) do
+        Integer(:num)
+        String(:somestring)
+      end
+      db[:ttt].insert(:num => 42, :somestring => "This is a string")
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+      db.drop_table(:ttt)
+    end
+
+    context "when lowercase_column_names is on (default)" do
+      it "the field names are lower case" do
+        plugin.run(events)
+        expect(events.first.to_hash.keys.sort).to eq(
+          ["@timestamp", "@version","num", "somestring"])
+      end
+    end
+
+    context "when lowercase_column_names is off" do
+      let(:settings) { { "statement" => "SELECT * FROM ttt", "lowercase_column_names" => false } }
+      it "the field names are UPPER case (natural for Derby DB)" do
+        plugin.run(events)
+        expect(events.first.to_hash.keys.sort).to eq(
+          ["@timestamp", "@version","NUM", "SOMESTRING"])
+      end
+    end
+  end
 end

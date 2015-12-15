@@ -12,13 +12,13 @@ require "yaml" # persistence
 #
 # ==== Drivers
 #
-# This plugin does not come packaged with JDBC driver libraries. The desired 
+# This plugin does not come packaged with JDBC driver libraries. The desired
 # jdbc driver library must be explicitly passed in to the plugin using the
 # `jdbc_driver_library` configuration option.
-# 
+#
 # ==== Scheduling
 #
-# Input from this plugin can be scheduled to run periodically according to a specific 
+# Input from this plugin can be scheduled to run periodically according to a specific
 # schedule. This scheduling syntax is powered by https://github.com/jmettraux/rufus-scheduler[rufus-scheduler].
 # The syntax is cron-like with some extensions specific to Rufus (e.g. timezone support ).
 #
@@ -29,16 +29,16 @@ require "yaml" # persistence
 # | `0 * * * *`                 | will execute on the 0th minute of every hour every day.
 # | `0 6 * * * America/Chicago` | will execute at 6:00am (UTC/GMT -5) every day.
 # |==========================================================
-#   
+#
 #
 # Further documentation describing this syntax can be found https://github.com/jmettraux/rufus-scheduler#parsing-cronlines-and-time-strings[here].
 #
 # ==== State
 #
-# The plugin will persist the `sql_last_start` parameter in the form of a 
-# metadata file stored in the configured `last_run_metadata_path`. Upon shutting down, 
+# The plugin will persist the `sql_last_start` parameter in the form of a
+# metadata file stored in the configured `last_run_metadata_path`. Upon shutting down,
 # this file will be updated with the current value of `sql_last_start`. Next time
-# the pipeline starts up, this value will be updated by reading from the file. If 
+# the pipeline starts up, this value will be updated by reading from the file. If
 # `clean_run` is set to true, this value will be ignored and `sql_last_start` will be
 # set to Jan 1, 1970, as if no query has ever been executed.
 #
@@ -48,17 +48,17 @@ require "yaml" # persistence
 # results are pre-fetched at a time from the cursor into the client's cache
 # before retrieving more results from the result-set. This is configured in
 # this plugin using the `jdbc_fetch_size` configuration option. No fetch size
-# is set by default in this plugin, so the specific driver's default size will 
+# is set by default in this plugin, so the specific driver's default size will
 # be used.
 #
 # ==== Usage:
 #
 # Here is an example of setting up the plugin to fetch data from a MySQL database.
 # First, we place the appropriate JDBC driver library in our current
-# path (this can be placed anywhere on your filesystem). In this example, we connect to 
+# path (this can be placed anywhere on your filesystem). In this example, we connect to
 # the 'mydb' database using the user: 'mysql' and wish to input all rows in the 'songs'
-# table that match a specific artist. The following examples demonstrates a possible 
-# Logstash configuration for this. The `schedule` option in this example will 
+# table that match a specific artist. The following examples demonstrates a possible
+# Logstash configuration for this. The `schedule` option in this example will
 # instruct the plugin to execute this input statement on the minute, every minute.
 #
 # [source,ruby]
@@ -77,9 +77,9 @@ require "yaml" # persistence
 # ----------------------------------
 #
 # ==== Configuring SQL statement
-# 
-# A sql statement is required for this input. This can be passed-in via a 
-# statement option in the form of a string, or read from a file (`statement_filepath`). File 
+#
+# A sql statement is required for this input. This can be passed-in via a
+# statement option in the form of a string, or read from a file (`statement_filepath`). File
 # option is typically used when the SQL statement is large or cumbersome to supply in the config.
 # The file option only supports one SQL statement. The plugin will only accept one of the options.
 # It cannot read a statement from a file as well as from the `statement` configuration parameter.
@@ -99,7 +99,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   config_name "jdbc"
 
   # If undefined, Logstash will complain, even if codec is unused.
-  default :codec, "plain" 
+  default :codec, "plain"
 
   # Statement to execute
   #
@@ -136,6 +136,9 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
   # Whether to save state or not in last_run_metadata_path
   config :record_last_run, :validate => :boolean, :default => true
+
+  # Whether to force the lowercasing of identifier fields
+  config :lowercase_column_names, :validate => :boolean, :default => true
 
   public
 
