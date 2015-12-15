@@ -156,6 +156,11 @@ module LogStash::PluginMixins::Jdbc
     end
     @database.sql_log_level = @sql_log_level.to_sym
     @database.logger = @logger
+    if @lowercase_column_names
+      @database.identifier_output_method = :downcase
+    else
+      @database.identifier_output_method = :to_s
+    end
     @sql_last_start = Time.at(0).utc
   end # def prepare_jdbc_connection
 
