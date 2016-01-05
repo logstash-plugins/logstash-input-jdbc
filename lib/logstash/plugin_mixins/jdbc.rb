@@ -161,7 +161,11 @@ module LogStash::PluginMixins::Jdbc
     else
       @database.identifier_output_method = :to_s
     end
-    @sql_last_start = Time.at(0).utc
+    if @use_column_value
+      @sql_last_value = 0
+    else
+      @sql_last_value = Time.at(0).utc
+    end
   end # def prepare_jdbc_connection
 
   public
@@ -175,17 +179,20 @@ module LogStash::PluginMixins::Jdbc
     begin
       parameters = symbolized_params(parameters)
       query = @database[statement, parameters]
-      sql_last_start = Time.now.utc
+      sql_last_value = @use_column_value ? @sql_last_value : Time.now.utc
+      @tracking_column_warning_sent = false
       @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
 
       if @jdbc_paging_enabled
         query.each_page(@jdbc_page_size) do |paged_dataset|
           paged_dataset.each do |row|
+            sql_last_value = get_column_value(row) if @use_column_value
             yield extract_values_from(row)
           end
         end
       else
         query.each do |row|
+          sql_last_value = get_column_value(row) if @use_column_value
           yield extract_values_from(row)
         end
       end
@@ -193,9 +200,24 @@ module LogStash::PluginMixins::Jdbc
     rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
       @logger.warn("Exception when executing JDBC query", :exception => e)
     else
-      @sql_last_start = sql_last_start
+      @sql_last_value = sql_last_value
     end
     return success
+  end
+
+  public
+  def get_column_value(row)
+    if !row.has_key?(@tracking_column.to_sym)
+      if !@tracking_column_warning_sent
+        @logger.warn("tracking_column not found in dataset.", :tracking_column => @tracking_column)
+        @tracking_column_warning_sent = true
+      end
+      # If we can't find the tracking column, return the current value in the ivar
+      @sql_last_value
+    else
+      # Otherwise send the updated tracking column
+      row[@tracking_column.to_sym]
+    end
   end
 
   # Symbolize parameters keys to use with Sequel

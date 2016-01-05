@@ -1,3 +1,6 @@
+## 3.0.0
+  - [#57](https://github.com/logstash-plugins/logstash-input-jdbc/issues/57) New feature: Allow tracking by a column value rather than by last run time.  **This is a breaking change**, as users may be required to change from using `sql_last_start` to use `sql_last_value` in their queries.  No other changes are required if you've been using time-based queries.  See the documentation if you wish to use an incremental column value to track updates to your tables.
+
 ## 2.1.1
   - [#44](https://github.com/logstash-plugins/logstash-input-jdbc/issues/44) add option to control the lowercase or not, of the column names.
 
