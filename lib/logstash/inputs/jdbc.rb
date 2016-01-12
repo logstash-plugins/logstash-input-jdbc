@@ -41,6 +41,30 @@ require "yaml" # persistence
 # the pipeline starts up, this value will be updated by reading from the file. If
 # `clean_run` is set to true, this value will be ignored and `sql_last_value` will be
 # set to Jan 1, 1970, or 0 if `use_column_value` is true, as if no query has ever been executed.
+
+# The new updated version namely 3.0.0 gives you an additional funtionality of adding a tracking column.
+# To make use of it, you need to add/set the following options:
+# [source,ruby]
+# ----------------------------------
+# jdbc {
+# # ...other config...
+#  use_column_value => true
+#  tracking_column => MY_COLUMN_NAME
+# # ...other config, if any...
+# }
+# ----------------------------------
+# Also changed is the built-in metadata. When using timestamps to determine which rows to get, this was called sql_last_start.
+# In order to keep it simple, and with one metadata value, this is now sql_last_value. sql_last_value will hold the last column
+# value from tracking_column, so you can set up a query like:
+# [source,ruby]
+# ----------------------------------
+#  jdbc {
+#   statement => "SELECT id, mycolumn1, mycolumn2 FROM my_table WHERE id > :sql_last_value"
+#   use_column_value => true
+#   tracking_column => id
+#  # ... other configuration bits
+#  }
+# ----------------------------------
 #
 # ==== Dealing With Large Result-sets
 #
