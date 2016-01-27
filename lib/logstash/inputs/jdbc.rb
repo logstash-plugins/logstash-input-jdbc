@@ -95,6 +95,19 @@ require "yaml" # persistence
 # `tracking_column` is set. It is updated accordingly after subsequent queries are run.
 # |==========================================================
 #
+# Example:
+# [source,ruby]
+# ----------------------------------
+# input {
+#   jdbc {
+#     statement => "SELECT id, mycolumn1, mycolumn2 FROM my_table WHERE id > :sql_last_value"
+#     use_column_value => true
+#     tracking_column => id
+#     # ... other configuration bits
+#   }
+# }
+#
+#
 class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   include LogStash::PluginMixins::Jdbc
   config_name "jdbc"
