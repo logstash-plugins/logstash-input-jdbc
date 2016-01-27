@@ -106,7 +106,7 @@ require "yaml" # persistence
 #     # ... other configuration bits
 #   }
 # }
-#
+# ----------------------------------
 #
 class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   include LogStash::PluginMixins::Jdbc
