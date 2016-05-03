@@ -1,7 +1,11 @@
+---
 sudo: false
 language: ruby
 cache: bundler
 rvm:
-  - jruby-1.7.23
-script: 
-  - bundle exec rspec spec
+- jruby-1.7.25
+script:
+- bundle exec rspec spec
+jdk: oraclejdk8
+before_install:
+- git clone -b feature/event_interface https://github.com/elastic/logstash

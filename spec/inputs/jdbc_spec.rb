@@ -134,7 +134,7 @@ describe LogStash::Inputs::Jdbc do
 
     it "should retrieve params correctly from Event" do
       plugin.run(queue)
-      expect(queue.pop['num_param']).to eq(settings['parameters']['num_param'])
+      expect(queue.pop.get('num_param')).to eq(settings['parameters']['num_param'])
     end
   end
 
@@ -252,7 +252,7 @@ describe LogStash::Inputs::Jdbc do
     it "should convert it to LogStash::Timestamp " do
       plugin.run(queue)
       event = queue.pop
-      expect(event["custom_time"]).to be_a(LogStash::Timestamp)
+      expect(event.get("custom_time")).to be_a(LogStash::Timestamp)
     end
   end
 
@@ -288,7 +288,7 @@ describe LogStash::Inputs::Jdbc do
       plugin.run(queue)
       event = queue.pop
       # This reflects a 6 hour time difference between UTC and America/Chicago
-      expect(event["custom_time"].time).to eq(Time.iso8601("2015-01-01T18:00:00Z"))
+      expect(event.get("custom_time").time).to eq(Time.iso8601("2015-01-01T18:00:00Z"))
     end
   end
 
@@ -323,7 +323,7 @@ describe LogStash::Inputs::Jdbc do
       plugin.run(queue)
       event = queue.pop
       # With no timezone set, no change should occur
-      expect(event["custom_time"].time).to eq(Time.iso8601("2015-01-01T12:00:00Z"))
+      expect(event.get("custom_time").time).to eq(Time.iso8601("2015-01-01T12:00:00Z"))
     end
   end
 
@@ -356,7 +356,7 @@ describe LogStash::Inputs::Jdbc do
 
       actual_sum = 0
       until queue.empty? do
-        actual_sum += queue.pop['num']
+        actual_sum += queue.pop.get('num')
       end
 
       expect(actual_sum).to eq(nums.inject{|sum,x| sum + x })
