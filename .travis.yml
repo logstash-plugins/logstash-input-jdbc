@@ -7,5 +7,4 @@ rvm:
 script:
 - bundle exec rspec spec
 jdk: oraclejdk8
-before_install:
-- git clone -b feature/event_interface https://github.com/elastic/logstash
+before_install: []
