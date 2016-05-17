@@ -1,3 +1,5 @@
+# 3.0.3
+  - Added feature to read password from external file (#120).
 # 3.0.2
   - Depend on logstash-core-plugin-api instead of logstash-core, removing the need to mass update plugins on major releases of logstash
 # 3.0.1
