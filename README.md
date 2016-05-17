@@ -95,6 +95,7 @@ Reading data from MySQL:
 	    jdbc_connection_string => "jdbc:mysql://host:port/database"
 	    jdbc_user => "user"
 	    jdbc_password => "password"
+      # or jdbc_password_filepath => "/path/to/my/password_file"
 	    statement => "SELECT ..."
 	    jdbc_paging_enabled => "true"
 	    jdbc_page_size => "50000"
