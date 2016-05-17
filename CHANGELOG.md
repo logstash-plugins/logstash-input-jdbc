@@ -1,3 +1,5 @@
+## 4.0.2
+  - Added feature to read password from external file (#120).
 ## 4.0.1
   - Republish all the gems under jruby.
 ## 4.0.0
