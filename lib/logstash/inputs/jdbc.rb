@@ -185,6 +185,12 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     end
 
     @statement = File.read(@statement_filepath) if @statement_filepath
+
+    if (@jdbc_password_filepath and @jdbc_password)
+      raise(LogStash::ConfigurationError, "Only one of :jdbc_password, :jdbc_password_filepath may be set at a time.")
+    end
+
+    @jdbc_password = File.read(@jdbc_password_filepath).strip if @jdbc_password_filepath
   end # def register
 
   def run(queue)

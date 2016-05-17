@@ -40,6 +40,9 @@ module LogStash::PluginMixins::Jdbc
     # JDBC password
     config :jdbc_password, :validate => :password
 
+    # JDBC password filename
+    config :jdbc_password_filepath, :validate => :path
+
     # JDBC enable paging
     #
     # This will cause a sql statement to be broken up into multiple queries.

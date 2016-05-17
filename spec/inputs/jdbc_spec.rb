@@ -81,6 +81,41 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when both jdbc_password and jdbc_password_filepath arguments are passed" do
+    let(:statement) { "SELECT * from test_table" }
+    let(:jdbc_password) { "secret" }
+    let(:jdbc_password_file_path) { Stud::Temporary.pathname }
+    let(:settings) { { "jdbc_password_filepath" => jdbc_password_file_path,
+                       "jdbc_password" => jdbc_password,
+                       "statement" => statement } }
+
+    it "should fail to register" do
+      expect{ plugin.register }.to raise_error(LogStash::ConfigurationError)
+    end
+  end
+
+  context "when jdbc_password is passed in from a file" do
+    let(:statement) { "SELECT * from test_table" }
+    let(:jdbc_password) { "secret" }
+    let(:jdbc_password_file_path) { Stud::Temporary.pathname }
+    let(:settings) { { "jdbc_password_filepath" => jdbc_password_file_path,
+                       "statement" => statement } }
+
+    before do
+      File.write(jdbc_password_file_path, jdbc_password)
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should read in jdbc_password from file" do
+      expect(plugin.jdbc_password).to eq(jdbc_password)
+    end
+  end
+
+
   context "when neither statement and statement_filepath arguments are passed" do
     it "should fail to register" do
       expect{ plugin.register }.to raise_error(LogStash::ConfigurationError)
