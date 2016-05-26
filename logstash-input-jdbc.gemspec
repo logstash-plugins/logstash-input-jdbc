@@ -29,4 +29,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'timecop'
   s.add_development_dependency 'jdbc-derby'
   s.add_development_dependency 'docker-api'
+  s.add_development_dependency 'fileutil'
 end
