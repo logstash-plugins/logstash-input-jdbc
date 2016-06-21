@@ -301,29 +301,51 @@ describe LogStash::Inputs::Jdbc do
 
     let(:settings) do
       {
-        "statement" => "SELECT * from test_table",
+        "statement" => "SELECT * from test_table WHERE custom_time > :sql_last_value",
+        "use_column_value" => true,
+        "tracking_column" => "custom_time",
+        "last_run_metadata_path" => Stud::Temporary.pathname
       }
     end
 
-    let(:num_rows) { 10 }
+    let(:hour_range) { 10..20 }
 
-    before do
-      num_rows.times do
-        db[:test_table].insert(:num => 1, :custom_time => "2015-01-01 12:00:00", :created_at => Time.now.utc)
+    it "should convert the time to reflect the timezone " do
+      last_run_value = Time.iso8601("2000-01-01T00:00:00.000Z")
+      File.write(settings["last_run_metadata_path"], YAML.dump(last_run_value))
+
+      hour_range.each do |i|
+        db[:test_table].insert(:num => i, :custom_time => "2015-01-01 #{i}:00:00", :created_at => Time.now.utc)
       end
 
       plugin.register
-    end
 
-    after do
-      plugin.stop
-    end
-
-    it "should convert the time to reflect the timezone " do
       plugin.run(queue)
+      expected = ["2015-01-01T16:00:00.000Z",
+                  "2015-01-01T17:00:00.000Z",
+                  "2015-01-01T18:00:00.000Z",
+                  "2015-01-01T19:00:00.000Z",
+                  "2015-01-01T20:00:00.000Z",
+                  "2015-01-01T21:00:00.000Z",
+                  "2015-01-01T22:00:00.000Z",
+                  "2015-01-01T23:00:00.000Z",
+                  "2015-01-02T00:00:00.000Z",
+                  "2015-01-02T01:00:00.000Z",
+                  "2015-01-02T02:00:00.000Z"].map { |i| Time.iso8601(i) }
+      actual = queue.size.times.map { queue.pop.get("custom_time").time }
+      expect(actual).to eq(expected)
+      plugin.stop
+
+      plugin.run(queue)
+      expect(queue.size).to eq(0)
+      db[:test_table].insert(:num => 11, :custom_time => "2015-01-01 11:00:00", :created_at => Time.now.utc)
+      db[:test_table].insert(:num => 12, :custom_time => "2015-01-01 21:00:00", :created_at => Time.now.utc)
+      plugin.run(queue)
+      expect(queue.size).to eq(1)
       event = queue.pop
-      # This reflects a 6 hour time difference between UTC and America/Chicago
-      expect(event.get("custom_time").time).to eq(Time.iso8601("2015-01-01T18:00:00Z"))
+      expect(event.get("num")).to eq(12)
+      expect(event.get("custom_time").time).to eq(Time.iso8601("2015-01-02T03:00:00.000Z"))
+      p settings
     end
   end
 
