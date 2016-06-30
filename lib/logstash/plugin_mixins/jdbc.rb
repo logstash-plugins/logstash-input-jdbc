@@ -263,7 +263,6 @@ module LogStash::PluginMixins::Jdbc
 
   private
   def decorate_value(value)
-
     if value.is_a?(Time)
       # transform it to LogStash::Timestamp as required by LS
       LogStash::Timestamp.new(value)
@@ -272,7 +271,7 @@ module LogStash::PluginMixins::Jdbc
       # This is slower, so we put it in as a conditional case.
       LogStash::Timestamp.new(Time.parse(value.to_s))
     else
-      value  # no-op
+      value
     end
   end
 end
