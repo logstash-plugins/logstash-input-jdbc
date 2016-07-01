@@ -901,8 +901,12 @@ describe LogStash::Inputs::Jdbc do
 
     let(:settings) {{ "statement" => "SELECT * from test_table" }}
     let(:events)   { [] }
+    let(:row) do
+      {"column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3}
+    end
 
     before(:each) do
+      allow_any_instance_of(Sequel::JDBC::Derby::Dataset).to receive(:each).and_yield(row)
       plugin.register
     end
 
@@ -910,21 +914,58 @@ describe LogStash::Inputs::Jdbc do
       plugin.stop
     end
 
-    it "should transform all column string to UTF-8, default encoding" do
-      row = {"column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3}
-      allow_any_instance_of(Sequel::JDBC::Derby::Dataset).to receive(:each).and_yield(row)
+    it "shuold not convert any column by default" do
+      encoded_row = { "column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3 }
+      expect(LogStash::Event).to receive(:new) do |row|
+        row.each do |k, v|
+          next unless v.is_a?(String)
+          expect(row[k].encoding).to eq(encoded_row[k].encoding)
+        end
+      end
       plugin.run(events)
-      ["column0", "column1"].each do |column_name|
-        expect(events[0].get(column_name).encoding).to eq(Encoding::UTF_8)
+    end
+
+    context "when all string columns should be encoded" do
+
+      let(:settings) {{ "statement" => "SELECT * from test_table", "enable_encoding" => true }}
+
+      it "should transform all column string to UTF-8, default encoding" do
+        encoded_row = { "column0" => "foo", "column1" => "bar", "column2" => 3 }
+        expect(LogStash::Event).to receive(:new) do |row|
+          row.each do |k, v|
+            next unless v.is_a?(String)
+            expect(row[k].encoding).to eq(encoded_row[k].encoding)
+          end
+        end
+        plugin.run(events)
+      end
+
+      it "should create special converters for each string time found in the row" do
+        expect(LogStash::Util::Charset).to receive(:new).with("ISO-8859-1").and_call_original
+        plugin.run(events)
       end
     end
 
+    context "when only an specific column should be converted" do
 
-    it "should create special converters for each string time found in the row" do
-      row = {"column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3}
-      allow_any_instance_of(Sequel::JDBC::Derby::Dataset).to receive(:each).and_yield(row)
-      expect(LogStash::Util::Charset).to receive(:new).with("ISO-8859-1").and_call_original
-      plugin.run(events)
+      let(:settings) {{ "statement" => "SELECT * from test_table", "enable_encoding" => true, "columns_to_encode" => [ "column1" ] }}
+
+      let(:row) do
+        {"column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3, "column3" => "berlin".force_encoding(Encoding::ASCII_8BIT)}
+      end
+
+      it "should only convert the selected column" do
+        encoded_row = {
+          "column0" => "foo", "column1" => "bar", "column2" => 3, "column3" => "berlin".force_encoding(Encoding::ASCII_8BIT)
+        }
+        expect(LogStash::Event).to receive(:new) do |row|
+          row.each do |k, v|
+            next unless v.is_a?(String)
+            expect(row[k].encoding).to eq(encoded_row[k].encoding)
+          end
+        end
+        plugin.run(events)
+      end
     end
 
   end
