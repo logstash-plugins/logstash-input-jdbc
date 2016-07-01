@@ -29,6 +29,7 @@ describe LogStash::Inputs::Jdbc do
     db.create_table :test_table do
       DateTime :created_at
       Integer  :num
+      String   :string
       DateTime :custom_time
     end
   end
@@ -892,6 +893,44 @@ describe LogStash::Inputs::Jdbc do
       mixin_settings['connection_retry_attempts'] = -2
       expect { plugin.register }.to_not raise_error
       plugin.stop
+    end
+  end
+
+  context "when encoding of some columns need to be changed" do
+
+    let(:settings) {{ "statement" => "SELECT * from test_table" }}
+    let(:events)   { [] }
+
+    before(:each) do
+      plugin.register
+    end
+
+    after(:each) do
+      plugin.stop
+    end
+
+    it "should transform all column string to UTF-8, default encoding" do
+      row = {"column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3}
+      allow_any_instance_of(Sequel::JDBC::Derby::Dataset).to receive(:each).and_yield(row)
+      plugin.run(events)
+      ["column0", "column1"].each do |column_name|
+        expect(events[0].get(column_name).encoding).to eq(Encoding::UTF_8)
+      end
+    end
+
+    context "when using non default encoding as data charset" do
+
+      let(:settings) {{ "statement" => "SELECT * from test_table", "charset" => "US-ASCII" }}
+
+      it "should transform all column string to UTF-8 as final encoding" do
+        row = {"column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3}
+        allow_any_instance_of(Sequel::JDBC::Derby::Dataset).to receive(:each).and_yield(row)
+        plugin.run(events)
+        ["column0", "column1"].each do |column_name|
+          expect(events[0].get(column_name).encoding).to eq(Encoding::UTF_8)
+        end
+      end
+
     end
   end
 end

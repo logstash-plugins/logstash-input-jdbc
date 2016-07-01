@@ -258,12 +258,11 @@ module LogStash::PluginMixins::Jdbc
   private
   #Stringify row keys and decorate values when necessary
   def extract_values_from(row)
-    Hash[row.map { |k, v| [k.to_s, decorate_value(v)] }]
+    Hash[row.map { |k, v| [k.to_s, decorate_value(convert(v))] }]
   end
 
   private
   def decorate_value(value)
-
     if value.is_a?(Time)
       # transform it to LogStash::Timestamp as required by LS
       LogStash::Timestamp.new(value)
@@ -272,7 +271,13 @@ module LogStash::PluginMixins::Jdbc
       # This is slower, so we put it in as a conditional case.
       LogStash::Timestamp.new(Time.parse(value.to_s))
     else
-      value  # no-op
+      value
     end
+  end
+
+  private
+  # make sure the encoding is uniform over fields
+  def convert(value)
+    value.is_a?(String) ? @converter.convert(value) : value
   end
 end
