@@ -1,3 +1,4 @@
+# encoding: utf-8
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/jdbc"
 require "jdbc/derby"
@@ -918,19 +919,13 @@ describe LogStash::Inputs::Jdbc do
       end
     end
 
-    context "when using non default encoding as data charset" do
 
-      let(:settings) {{ "statement" => "SELECT * from test_table" }}
-
-      it "should transform all column string to UTF-8 as final encoding" do
-        row = {"column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3}
-        allow_any_instance_of(Sequel::JDBC::Derby::Dataset).to receive(:each).and_yield(row)
-        plugin.run(events)
-        ["column0", "column1"].each do |column_name|
-          expect(events[0].get(column_name).encoding).to eq(Encoding::UTF_8)
-        end
-      end
-
+    it "should create special converters for each string time found in the row" do
+      row = {"column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3}
+      allow_any_instance_of(Sequel::JDBC::Derby::Dataset).to receive(:each).and_yield(row)
+      expect(LogStash::Util::Charset).to receive(:new).with("ISO-8859-1").and_call_original
+      plugin.run(events)
     end
+
   end
 end
