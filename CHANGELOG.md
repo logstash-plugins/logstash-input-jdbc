@@ -1,3 +1,7 @@
+# 3.1.0
+  - Add an option to select the encoding data should be transform from,
+    this will make sure all strings read from the jdbc connector are
+    noremalized to be UTF-8 so no causing issues with later filters in LS.
 # 3.0.3
   - Added feature to read password from external file (#120).
 # 3.0.2
