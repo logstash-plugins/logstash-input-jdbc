@@ -258,7 +258,7 @@ module LogStash::PluginMixins::Jdbc
   private
   #Stringify row keys and decorate values when necessary
   def extract_values_from(row)
-    Hash[row.map { |k, v| [k.to_s, decorate_value(convert(v))] }]
+    Hash[row.map { |k, v| [k.to_s, decorate_value(v)] }]
   end
 
   private
@@ -273,20 +273,5 @@ module LogStash::PluginMixins::Jdbc
     else
       value
     end
-  end
-
-  private
-  # make sure the encoding is uniform over fields
-  def convert(value)
-    return value unless value.is_a?(String)
-    converter = find_converter_for value
-    converter.convert(value)
-  end
-
-  def find_converter_for(value)
-    unless @converters.keys.include?(value.encoding)
-      @converters[value.encoding] = LogStash::Util::Charset.new(value.encoding.to_s)
-    end
-    @converters[value.encoding]
   end
 end
