@@ -160,14 +160,6 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # Whether to force the lowercasing of identifier fields
   config :lowercase_column_names, :validate => :boolean, :default => true
 
-  # The character encoding used in this input. Examples include `UTF-8`
-  # and `cp1252`
-  #
-  # This setting is useful if some of your data is in `Latin-1` (aka `cp1252`)
-  # or in another character set other than `UTF-8`. After the conversion all data
-  # will be in `UTF-8` as the common encoding for LogStash pipeline.
-  config :charset, :validate => ::Encoding.name_list, :default => "UTF-8"
-
   public
 
   def register
@@ -200,7 +192,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
     @jdbc_password = File.read(@jdbc_password_filepath).strip if @jdbc_password_filepath
 
-    @converter = LogStash::Util::Charset.new(@charset)
+    @converters = { Encoding::UTF_8 => LogStash::Util::Charset.new("UTF-8") }
   end # def register
 
   def run(queue)

@@ -278,6 +278,15 @@ module LogStash::PluginMixins::Jdbc
   private
   # make sure the encoding is uniform over fields
   def convert(value)
-    value.is_a?(String) ? @converter.convert(value) : value
+    return value unless value.is_a?(String)
+    converter = find_converter_for value
+    converter.convert(value)
+  end
+
+  def find_converter_for(value)
+    unless @converters.keys.include?(value.encoding)
+      @converters[value.encoding] = LogStash::Util::Charset.new(value.encoding.to_s)
+    end
+    @converters[value.encoding]
   end
 end

@@ -920,7 +920,7 @@ describe LogStash::Inputs::Jdbc do
 
     context "when using non default encoding as data charset" do
 
-      let(:settings) {{ "statement" => "SELECT * from test_table", "charset" => "US-ASCII" }}
+      let(:settings) {{ "statement" => "SELECT * from test_table" }}
 
       it "should transform all column string to UTF-8 as final encoding" do
         row = {"column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3}
