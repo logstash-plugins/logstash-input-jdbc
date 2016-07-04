@@ -927,7 +927,10 @@ describe LogStash::Inputs::Jdbc do
 
     context "when all string columns should be encoded" do
 
-      let(:settings) {{ "statement" => "SELECT * from test_table", "columns_to_encode" => { "_" => "ISO-8859-1" } }}
+      let(:settings) do
+        { "statement" => "SELECT * from test_table",
+          "default_encoding" => "ISO-8859-1" }
+      end
 
       let(:row) do
         {"column0" => "foo".force_encoding(Encoding::ISO_8859_1), "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3}
