@@ -927,7 +927,11 @@ describe LogStash::Inputs::Jdbc do
 
     context "when all string columns should be encoded" do
 
-      let(:settings) {{ "statement" => "SELECT * from test_table", "enable_encoding" => true }}
+      let(:settings) {{ "statement" => "SELECT * from test_table", "columns_to_encode" => { "_" => "ISO-8859-1" } }}
+
+      let(:row) do
+        {"column0" => "foo".force_encoding(Encoding::ISO_8859_1), "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3}
+      end
 
       it "should transform all column string to UTF-8, default encoding" do
         encoded_row = { "column0" => "foo", "column1" => "bar", "column2" => 3 }
@@ -948,7 +952,10 @@ describe LogStash::Inputs::Jdbc do
 
     context "when only an specific column should be converted" do
 
-      let(:settings) {{ "statement" => "SELECT * from test_table", "enable_encoding" => true, "columns_to_encode" => [ "column1" ] }}
+      let(:settings) do
+        { "statement" => "SELECT * from test_table",
+          "columns_to_encode" => { "column1" => "ISO-8859-1" } }
+      end
 
       let(:row) do
         {"column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3, "column3" => "berlin".force_encoding(Encoding::ASCII_8BIT)}
