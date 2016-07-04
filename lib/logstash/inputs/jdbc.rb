@@ -160,11 +160,12 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # Whether to force the lowercasing of identifier fields
   config :lowercase_column_names, :validate => :boolean, :default => true
 
-  # If not empty (default={}) it let's you select which string columns
-  # should be converted to UTF-8. To especify a column to be converted you can add the pair
-  # "column_name" => "original_encoding_type" to this hash. If you want to encode your columns
-  # you can use a definition like "_" => "original_encoding_type" and the encoding type will be
-  # applied to all columns.
+  # Default encoding applied to all columns unless no specific encoding is defined
+  # in the columns_to_encode variable. By default this value is not defined
+  config :default_encoding, :validate => :string
+
+  # It let's you select which string columns should be converted to UTF-8 from a given encoding type.
+  # To especify a column to be converted you can add the pair "column_name" => "original_encoding_type" to this hash.
   config :columns_to_encode, :validate => :hash, :default => {}
 
   public
@@ -199,7 +200,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
     @jdbc_password = File.read(@jdbc_password_filepath).strip if @jdbc_password_filepath
 
-    @converters = { "UTF-8" => LogStash::Util::Charset.new("UTF-8") } if !@columns_to_encode.empty?
+    @converters = { "UTF-8" => LogStash::Util::Charset.new("UTF-8") } if enable_encoding
   end # def register
 
   def run(queue)
@@ -248,8 +249,9 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   private
 
   def enable_encoding
-    !@columns_to_encode.empty?
+    !@default_encoding.nil? || (@default_encoding.nil? && !@columns_to_encode.empty?)
   end
+
   # make sure the encoding is uniform over fields
   def convert(key, value)
     return value unless should_convert(key, value)
@@ -259,19 +261,15 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
   def should_convert(key, value)
     column_keys = @columns_to_encode.keys
-    value.is_a?(String) && (column_keys.include?("_") || column_keys.include?(key))
+    value.is_a?(String) && (!@default_encoding.nil? || ( @default_encoding.nil? && column_keys.include?(key)) )
   end
 
   def find_converter_for(key, value)
-    encoding = @columns_to_encode[encode_all_columns ? "_" : key] # fetch the encoding argument for this column
+    encoding = @columns_to_encode[key] || @default_encoding
     unless @converters.keys.include?(encoding)
       @converters[encoding] = LogStash::Util::Charset.new(encoding)
     end
     @converters[encoding]
-  end
-
-  def encode_all_columns
-    @columns_to_encode.keys.size==1 && @columns_to_encode.keys == ["_"]
   end
 
 end # class LogStash::Inputs::Jdbc
