@@ -261,7 +261,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
   def should_convert(key, value)
     column_keys = @columns_to_encode.keys
-    value.is_a?(String) && (!@default_encoding.nil? || ( @default_encoding.nil? && column_keys.include?(key)) )
+    value.is_a?(String) && (!@default_encoding.nil? || column_keys.include?(key))
   end
 
   def find_converter_for(key, value)
