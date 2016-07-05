@@ -212,7 +212,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
     @jdbc_password = File.read(@jdbc_password_filepath).strip if @jdbc_password_filepath
 
-    if enable_encoding
+    if enable_encoding?
       @converters = {}
       @columns_charset.each do |column_name, encoding|
         @converters[encoding] = LogStash::Util::Charset.new(encoding)
@@ -248,7 +248,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     # update default parameters
     @parameters['sql_last_value'] = @sql_last_value
     execute_statement(@statement, @parameters) do |row|
-      if enable_encoding
+      if enable_encoding?
         ## do the necessary conversions to string elements
         row = Hash[row.map { |k, v| [k.to_s, convert(k, v)] }]
       end
@@ -266,7 +266,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
   private
 
-  def enable_encoding
+  def enable_encoding?
     !@charset.nil? || !@columns_charset.empty?
   end
 

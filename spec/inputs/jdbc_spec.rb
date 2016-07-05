@@ -914,7 +914,7 @@ describe LogStash::Inputs::Jdbc do
       plugin.stop
     end
 
-    it "shuold not convert any column by default" do
+    it "should not convert any column by default" do
       encoded_row = { "column0" => "foo", "column1" => "bar".force_encoding(Encoding::ISO_8859_1), "column2" => 3 }
       expect(LogStash::Event).to receive(:new) do |row|
         row.each do |k, v|
