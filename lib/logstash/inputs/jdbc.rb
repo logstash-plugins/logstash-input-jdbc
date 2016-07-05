@@ -200,7 +200,13 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
     @jdbc_password = File.read(@jdbc_password_filepath).strip if @jdbc_password_filepath
 
-    @converters = { "UTF-8" => LogStash::Util::Charset.new("UTF-8") } if enable_encoding
+    if enable_encoding
+      @converters = {}
+      @columns_charset.each do |column_name, encoding|
+        @converters[encoding] = LogStash::Util::Charset.new(encoding)
+      end
+      @converters[@charset] = LogStash::Util::Charset.new(@charset) if @charset
+    end
   end # def register
 
   def run(queue)
@@ -249,27 +255,20 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   private
 
   def enable_encoding
-    !@charset.nil? || (@charset.nil? && !@columns_charset.empty?)
+    !@charset.nil? || !@columns_charset.empty?
   end
 
   # make sure the encoding is uniform over fields
-  def convert(key, value)
-    return value unless should_convert(key, value)
-    converter = find_converter_for(key, value)
-    converter.convert(value)
-  end
-
-  def should_convert(key, value)
-    column_keys = @columns_charset.keys
-    value.is_a?(String) && (!@charset.nil? || column_keys.include?(key))
-  end
-
-  def find_converter_for(key, value)
-    encoding = @columns_charset[key] || @charset
-    unless @converters.keys.include?(encoding)
-      @converters[encoding] = LogStash::Util::Charset.new(encoding)
+  def convert(column_name, value)
+    return value unless value.is_a?(String)
+    if @columns_charset[column_name]
+      converter = @converters[@columns_charset[column_name]]
+      converter.convert(value)
+    elsif @charset
+      converter = @converters[@charset]
+      converter.convert(value)
+    else
+      value
     end
-    @converters[encoding]
   end
-
 end # class LogStash::Inputs::Jdbc

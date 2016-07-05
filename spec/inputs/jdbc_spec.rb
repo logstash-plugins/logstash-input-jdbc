@@ -946,11 +946,6 @@ describe LogStash::Inputs::Jdbc do
         end
         plugin.run(events)
       end
-
-      it "should create special converters for each string time found in the row" do
-        expect(LogStash::Util::Charset).to receive(:new).with("ISO-8859-1").and_call_original
-        plugin.run(events)
-      end
     end
 
     context "when only an specific column should be converted" do
