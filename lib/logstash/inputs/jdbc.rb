@@ -166,6 +166,18 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
   # The character encoding for specific columns. This option will override the `:charset` option 
   # for the specified columns.
+  #
+  # Example:
+  # [source,ruby]
+  # ----------------------------------
+  # input {
+  #   jdbc {
+  #     ...
+  #     columns_charset => { "column0" => "ISO-8859-1" }
+  #     ...
+  #   }
+  # }
+  # this will only convert column0 that has ISO-8859-1 as an original encoding.
   config :columns_charset, :validate => :hash, :default => {}
 
   public
