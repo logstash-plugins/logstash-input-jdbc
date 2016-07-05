@@ -160,6 +160,26 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # Whether to force the lowercasing of identifier fields
   config :lowercase_column_names, :validate => :boolean, :default => true
 
+  # The character encoding of all columns, leave empty if the columns are already properly UTF-8 
+  # encoded. Specific columns charsets using :columns_charset can override this setting.
+  config :charset, :validate => :string
+
+  # The character encoding for specific columns. This option will override the `:charset` option 
+  # for the specified columns.
+  #
+  # Example:
+  # [source,ruby]
+  # ----------------------------------
+  # input {
+  #   jdbc {
+  #     ...
+  #     columns_charset => { "column0" => "ISO-8859-1" }
+  #     ...
+  #   }
+  # }
+  # this will only convert column0 that has ISO-8859-1 as an original encoding.
+  config :columns_charset, :validate => :hash, :default => {}
+
   public
 
   def register
@@ -191,6 +211,14 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     end
 
     @jdbc_password = File.read(@jdbc_password_filepath).strip if @jdbc_password_filepath
+
+    if enable_encoding?
+      @converters = {}
+      @columns_charset.each do |column_name, encoding|
+        @converters[encoding] = LogStash::Util::Charset.new(encoding)
+      end
+      @converters[@charset] = LogStash::Util::Charset.new(@charset) if @charset
+    end
   end # def register
 
   def run(queue)
@@ -220,6 +248,10 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     # update default parameters
     @parameters['sql_last_value'] = @sql_last_value
     execute_statement(@statement, @parameters) do |row|
+      if enable_encoding?
+        ## do the necessary conversions to string elements
+        row = Hash[row.map { |k, v| [k.to_s, convert(k, v)] }]
+      end
       event = LogStash::Event.new(row)
       decorate(event)
       queue << event
@@ -232,4 +264,23 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     end
   end
 
+  private
+
+  def enable_encoding?
+    !@charset.nil? || !@columns_charset.empty?
+  end
+
+  # make sure the encoding is uniform over fields
+  def convert(column_name, value)
+    return value unless value.is_a?(String)
+    if @columns_charset[column_name]
+      converter = @converters[@columns_charset[column_name]]
+      converter.convert(value)
+    elsif @charset
+      converter = @converters[@charset]
+      converter.convert(value)
+    else
+      value
+    end
+  end
 end # class LogStash::Inputs::Jdbc
