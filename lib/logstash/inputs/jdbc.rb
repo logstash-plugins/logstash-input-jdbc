@@ -160,13 +160,13 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # Whether to force the lowercasing of identifier fields
   config :lowercase_column_names, :validate => :boolean, :default => true
 
-  # Default encoding applied to all columns unless no specific encoding is defined
-  # in the columns_to_encode variable. By default this value is not defined
-  config :default_encoding, :validate => :string
+  # The character encoding of all columns, leave empty if the columns are already properly UTF-8 
+  # encoded. Specific columns charsets using :columns_charset can override this setting.
+  config :charset, :validate => :string
 
-  # It let's you select which string columns should be converted to UTF-8 from a given encoding type.
-  # To especify a column to be converted you can add the pair "column_name" => "original_encoding_type" to this hash.
-  config :columns_to_encode, :validate => :hash, :default => {}
+  # The character encoding for specific columns. This option will override the `:charset` option 
+  # for the specified columns.
+  config :columns_charset, :validate => :hash, :default => {}
 
   public
 
@@ -249,7 +249,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   private
 
   def enable_encoding
-    !@default_encoding.nil? || (@default_encoding.nil? && !@columns_to_encode.empty?)
+    !@charset.nil? || (@charset.nil? && !@columns_charset.empty?)
   end
 
   # make sure the encoding is uniform over fields
@@ -260,12 +260,12 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   end
 
   def should_convert(key, value)
-    column_keys = @columns_to_encode.keys
-    value.is_a?(String) && (!@default_encoding.nil? || column_keys.include?(key))
+    column_keys = @columns_charset.keys
+    value.is_a?(String) && (!@charset.nil? || column_keys.include?(key))
   end
 
   def find_converter_for(key, value)
-    encoding = @columns_to_encode[key] || @default_encoding
+    encoding = @columns_charset[key] || @charset
     unless @converters.keys.include?(encoding)
       @converters[encoding] = LogStash::Util::Charset.new(encoding)
     end

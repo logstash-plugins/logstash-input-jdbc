@@ -929,7 +929,7 @@ describe LogStash::Inputs::Jdbc do
 
       let(:settings) do
         { "statement" => "SELECT * from test_table",
-          "default_encoding" => "ISO-8859-1" }
+          "charset" => "ISO-8859-1" }
       end
 
       let(:row) do
@@ -957,7 +957,7 @@ describe LogStash::Inputs::Jdbc do
 
       let(:settings) do
         { "statement" => "SELECT * from test_table",
-          "columns_to_encode" => { "column1" => "ISO-8859-1" } }
+          "columns_charset" => { "column1" => "ISO-8859-1" } }
       end
 
       let(:row) do
