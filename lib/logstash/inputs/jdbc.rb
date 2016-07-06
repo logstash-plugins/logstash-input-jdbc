@@ -193,6 +193,8 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       end
     end
 
+    @enable_encoding = !@charset.nil? || !@columns_charset.empty?
+
     # load sql_last_value from file if exists
     if @clean_run && File.exist?(@last_run_metadata_path)
       File.delete(@last_run_metadata_path)
@@ -267,7 +269,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   private
 
   def enable_encoding?
-    !@charset.nil? || !@columns_charset.empty?
+    @enable_encoding
   end
 
   # make sure the encoding is uniform over fields
