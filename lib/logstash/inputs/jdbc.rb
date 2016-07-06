@@ -273,8 +273,9 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # make sure the encoding is uniform over fields
   def convert(column_name, value)
     return value unless value.is_a?(String)
-    if @columns_charset[column_name]
-      converter = @converters[@columns_charset[column_name]]
+    column_charset = @columns_charset[column_name]
+    if column_charset
+      converter = @converters[column_charset]
       converter.convert(value)
     elsif @charset
       converter = @converters[@charset]

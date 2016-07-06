@@ -957,22 +957,26 @@ describe LogStash::Inputs::Jdbc do
     context "when only an specific column should be converted" do
 
       let(:settings) do
-        { "statement" => "SELECT * from test_table",
-          "columns_charset" => { "column1" => "ISO-8859-1" } }
+        {
+          "statement" => "SELECT * from test_table",
+          "columns_charset" => { "column1" => "ISO-8859-1" }
+        }
       end
 
       let(:row) do
-        {"column0" => "foo", 
-         "column1" => "bar".force_encoding(Encoding::ISO_8859_1), 
-         "column2" => 3, 
-         "column3" => "berlin".force_encoding(Encoding::ASCII_8BIT)}
+        {
+          "column0" => "foo",
+          "column1" => "bar".force_encoding(Encoding::ISO_8859_1),
+          "column2" => 3,
+          "column3" => "berlin".force_encoding(Encoding::ASCII_8BIT)
+        }
       end
 
       it "should only convert the selected column" do
         encoded_row = {
           "column0" => "foo",
           "column1" => "bar",
-          "column2" => 3, 
+          "column2" => 3,
           "column3" => "berlin".force_encoding(Encoding::ASCII_8BIT)
         }
         expect(LogStash::Event).to receive(:new) do |row|
@@ -984,6 +988,5 @@ describe LogStash::Inputs::Jdbc do
         plugin.run(events)
       end
     end
-
   end
 end
