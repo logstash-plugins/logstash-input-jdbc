@@ -902,9 +902,11 @@ describe LogStash::Inputs::Jdbc do
     let(:settings) {{ "statement" => "SELECT * from test_table" }}
     let(:events)   { [] }
     let(:row) do
-      {"column0" => "foo",
-       "column1" => "bar".force_encoding(Encoding::ISO_8859_1),
-       "column2" => 3}
+      {
+        "column0" => "foo",
+        "column1" => "bar".force_encoding(Encoding::ISO_8859_1),
+        "column2" => 3
+      }
     end
 
     before(:each) do
@@ -917,9 +919,11 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "should not convert any column by default" do
-      encoded_row = { "column0" => "foo", 
-                      "column1" => "bar".force_encoding(Encoding::ISO_8859_1), 
-                      "column2" => 3 }
+      encoded_row = {
+        "column0" => "foo",
+        "column1" => "bar".force_encoding(Encoding::ISO_8859_1),
+        "column2" => 3
+      }
       expect(LogStash::Event).to receive(:new) do |row|
         row.each do |k, v|
           next unless v.is_a?(String)
@@ -932,18 +936,26 @@ describe LogStash::Inputs::Jdbc do
     context "when all string columns should be encoded" do
 
       let(:settings) do
-        { "statement" => "SELECT * from test_table",
-          "charset" => "ISO-8859-1" }
+        {
+          "statement" => "SELECT * from test_table",
+          "charset" => "ISO-8859-1"
+        }
       end
 
       let(:row) do
-        {"column0" => "foo".force_encoding(Encoding::ISO_8859_1), 
-         "column1" => "bar".force_encoding(Encoding::ISO_8859_1),
-         "column2" => 3}
+        {
+          "column0" => "foo".force_encoding(Encoding::ISO_8859_1),
+          "column1" => "bar".force_encoding(Encoding::ISO_8859_1),
+          "column2" => 3
+        }
       end
 
       it "should transform all column string to UTF-8, default encoding" do
-        encoded_row = { "column0" => "foo", "column1" => "bar", "column2" => 3 }
+        encoded_row = {
+          "column0" => "foo",
+          "column1" => "bar",
+          "column2" => 3
+        }
         expect(LogStash::Event).to receive(:new) do |row|
           row.each do |k, v|
             next unless v.is_a?(String)
