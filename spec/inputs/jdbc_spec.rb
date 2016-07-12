@@ -80,8 +80,8 @@ describe "jdbc" do
   context "when passing parameters" do
     let(:settings) do
       {
-        "statement" => "SELECT :num_param as num_param FROM SYSIBM.SYSDUMMY1",
-        "parameters" => {"num_param" => 10}
+          "statement" => "SELECT :num_param as num_param FROM SYSIBM.SYSDUMMY1",
+          "parameters" => {"num_param" => 10}
       }
     end
 
@@ -126,9 +126,9 @@ describe "jdbc" do
 
     let(:settings) do
       {
-        "statement" => "SELECT * from test_table",
-        "jdbc_paging_enabled" => true,
-        "jdbc_page_size" => 20
+          "statement" => "SELECT * from test_table",
+          "jdbc_paging_enabled" => true,
+          "jdbc_page_size" => 20
       }
     end
 
@@ -217,9 +217,9 @@ describe "jdbc" do
 
     let(:settings) do
       {
-        "statement" => "SELECT * FROM test_table",
-        "last_run_metadata_path" => Stud::Temporary.pathname,
-        "clean_run" => true
+          "statement" => "SELECT * FROM test_table",
+          "last_run_metadata_path" => Stud::Temporary.pathname,
+          "clean_run" => true
       }
     end
 
@@ -242,9 +242,9 @@ describe "jdbc" do
   context "when state is not to be persisted" do
     let(:settings) do
       {
-        "statement" => "SELECT * FROM test_table",
-        "last_run_metadata_path" => Stud::Temporary.pathname,
-        "record_last_run" => false
+          "statement" => "SELECT * FROM test_table",
+          "last_run_metadata_path" => Stud::Temporary.pathname,
+          "record_last_run" => false
       }
     end
 
@@ -265,8 +265,8 @@ describe "jdbc" do
 
     let(:settings) do
       {
-        "statement" => "SELECT * from test_table",
-        "jdbc_fetch_size" => 1
+          "statement" => "SELECT * from test_table",
+          "jdbc_fetch_size" => 1
       }
     end
 
