@@ -1,3 +1,6 @@
+## 4.1.1
+  - Relax constraint on logstash-core-plugin-api to >= 1.60 <= 2.99
+
 ## 4.1.0
   - Add an option to select the encoding data should be transform from,
     this will make sure all strings read from the jdbc connector are
