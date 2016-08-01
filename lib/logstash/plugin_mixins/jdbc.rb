@@ -115,7 +115,8 @@ module LogStash::PluginMixins::Jdbc
           @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Tried #{@connection_retry_attempts} times.")
           raise e
         else
-          @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Trying again.")  
+          @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Trying again.")
+          @metric_errors.increment(:connection_retry)
         end
       rescue Sequel::Error => e
         if retry_attempts <= 0
@@ -123,6 +124,7 @@ module LogStash::PluginMixins::Jdbc
           raise e
         else
           @logger.error("Unable to connect to database. Trying again", :error_message => e.message)
+          @metric_errors.increment(:connection_retry)
         end
       end
       sleep(@connection_retry_attempts_wait_time)
@@ -159,6 +161,8 @@ module LogStash::PluginMixins::Jdbc
       raise LogStash::ConfigurationError, "#{e}. #{message}"
     end
     @database = jdbc_connect()
+    metric.increment(:connection)
+
     @database.extension(:pagination)
     if @jdbc_default_timezone
       @database.extension(:named_timezones)
@@ -201,8 +205,11 @@ module LogStash::PluginMixins::Jdbc
       parameters = symbolized_params(parameters)
       query = @database[statement, parameters]
       sql_last_value = @use_column_value ? @sql_last_value : Time.now.utc
+      metric.gauge(:sql_last_value, sql_last_value)
+
       @tracking_column_warning_sent = false
       @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
+      metric.gauge(:query_count, query.count)
 
       if @jdbc_paging_enabled
         query.each_page(@jdbc_page_size) do |paged_dataset|
@@ -220,6 +227,7 @@ module LogStash::PluginMixins::Jdbc
       success = true
     rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
       @logger.warn("Exception when executing JDBC query", :exception => e)
+      @metric_errors.increment(:jdbc_query_errors)
     else
       @sql_last_value = sql_last_value
     end

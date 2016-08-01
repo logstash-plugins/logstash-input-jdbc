@@ -183,6 +183,8 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   public
 
   def register
+    @metric_errors = metric.namespace(:errors)
+
     require "rufus/scheduler"
     prepare_jdbc_connection
 
@@ -247,6 +249,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   private
 
   def execute_query(queue)
+    metric.increment(:queries)
     # update default parameters
     @parameters['sql_last_value'] = @sql_last_value
     execute_statement(@statement, @parameters) do |row|
@@ -257,11 +260,13 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       event = LogStash::Event.new(row)
       decorate(event)
       queue << event
+      metric.increment(:events)
     end
   end
 
   def update_state_file
     if @record_last_run
+      metric.increment(:state_file_updates)
       File.write(@last_run_metadata_path, YAML.dump(@sql_last_value))
     end
   end
@@ -279,9 +284,11 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     if column_charset
       converter = @converters[column_charset]
       converter.convert(value)
+      metric.increment(:encoding_conversions)
     elsif @charset
       converter = @converters[@charset]
       converter.convert(value)
+      metric.increment(:encoding_conversions)
     else
       value
     end
