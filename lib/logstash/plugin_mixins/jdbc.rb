@@ -116,7 +116,7 @@ module LogStash::PluginMixins::Jdbc
           raise e
         else
           @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Trying again.")
-          @metric_errors.increment(:connection_retry)
+          @metric_errors.increment(:connection_retries)
         end
       rescue Sequel::Error => e
         if retry_attempts <= 0
@@ -124,7 +124,7 @@ module LogStash::PluginMixins::Jdbc
           raise e
         else
           @logger.error("Unable to connect to database. Trying again", :error_message => e.message)
-          @metric_errors.increment(:connection_retry)
+          @metric_errors.increment(:connection_retries)
         end
       end
       sleep(@connection_retry_attempts_wait_time)
@@ -161,7 +161,7 @@ module LogStash::PluginMixins::Jdbc
       raise LogStash::ConfigurationError, "#{e}. #{message}"
     end
     @database = jdbc_connect()
-    metric.increment(:connection)
+    metric.increment(:connections)
 
     @database.extension(:pagination)
     if @jdbc_default_timezone
