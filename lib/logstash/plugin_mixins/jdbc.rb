@@ -182,8 +182,13 @@ module LogStash::PluginMixins::Jdbc
     else
       @database.identifier_output_method = :to_s
     end
-    if @use_column_value and not @tracking_column_is_timestamp
-      @sql_last_value = 0
+    if @use_column_value
+      case @tracking_column_type
+        when "numeric"
+          @sql_last_value = 0
+        when "timestamp"
+          @sql_last_value = Time.at(0).utc
+      end
     else
       @sql_last_value = Time.at(0).utc
     end

@@ -474,7 +474,7 @@ describe LogStash::Inputs::Jdbc do
       { "statement" => "SELECT num, created_at, custom_time FROM test_table WHERE custom_time > :sql_last_value",
         "use_column_value" => true,
         "tracking_column" => "custom_time",
-        "tracking_column_is_timestamp" => true,
+        "tracking_column_type" => "timestamp",
         "last_run_metadata_path" => Stud::Temporary.pathname }
     end
 
