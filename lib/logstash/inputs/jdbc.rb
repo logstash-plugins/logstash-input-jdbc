@@ -151,6 +151,9 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # If tracking column value rather than timestamp, the column whose value is to be tracked
   config :tracking_column, :validate => :string
 
+  # Tracking column is a timestamp value to be tracked, rather than an int
+  config :tracking_column_is_timestamp, :validate => :boolean, :default => false
+
   # Whether the previous run state should be preserved
   config :clean_run, :validate => :boolean, :default => false
 
