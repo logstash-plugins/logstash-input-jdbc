@@ -209,7 +209,7 @@ module LogStash::PluginMixins::Jdbc
 
       @tracking_column_warning_sent = false
       @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
-      metric.gauge(:query_count, query.count)
+      metric.gauge(:rows_in, query.count)
 
       if @jdbc_paging_enabled
         query.each_page(@jdbc_page_size) do |paged_dataset|
