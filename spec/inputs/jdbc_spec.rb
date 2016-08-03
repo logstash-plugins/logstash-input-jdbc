@@ -497,6 +497,7 @@ describe LogStash::Inputs::Jdbc do
       test_table.insert(:num => nums[0], :created_at => Time.now.utc, :custom_time => times[0])
       test_table.insert(:num => nums[1], :created_at => Time.now.utc, :custom_time => times[1])
       plugin.run(queue)
+      expect(plugin.instance_variable_get("@sql_last_value").class).to eq(Time.parse(times[0]).class)
       expect(plugin.instance_variable_get("@sql_last_value")).to eq(Time.parse(times[1]))
       test_table.insert(:num => nums[2], :created_at => Time.now.utc, :custom_time => times[2])
       test_table.insert(:num => nums[3], :created_at => Time.now.utc, :custom_time => times[3])

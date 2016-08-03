@@ -213,12 +213,18 @@ module LogStash::PluginMixins::Jdbc
         query.each_page(@jdbc_page_size) do |paged_dataset|
           paged_dataset.each do |row|
             sql_last_value = get_column_value(row) if @use_column_value
+            if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
+              sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
+            end
             yield extract_values_from(row)
           end
         end
       else
         query.each do |row|
           sql_last_value = get_column_value(row) if @use_column_value
+          if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
+            sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
+          end
           yield extract_values_from(row)
         end
       end
