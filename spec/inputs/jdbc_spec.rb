@@ -463,6 +463,50 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when iteratively running plugin#run with timestamp tracking column with column value" do
+    let(:mixin_settings) do
+      { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
+        "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"
+      }
+    end
+
+    let(:settings) do
+      { "statement" => "SELECT num, created_at, custom_time FROM test_table WHERE custom_time > :sql_last_value",
+        "use_column_value" => true,
+        "tracking_column" => "custom_time",
+        "tracking_column_type" => "timestamp",
+        "last_run_metadata_path" => Stud::Temporary.pathname }
+    end
+
+    let(:nums) { [10, 20, 30, 40, 50] }
+    let(:times) {["2015-05-06 13:14:15","2015-05-07 13:14:15","2015-05-08 13:14:15","2015-05-09 13:14:15","2015-05-10 13:14:15"]}
+
+    before do
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should successfully update sql_last_value" do
+      test_table = db[:test_table]
+
+      plugin.run(queue)
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq(Time.parse("1970-01-01 00:00:00.000000000 +0000"))
+      test_table.insert(:num => nums[0], :created_at => Time.now.utc, :custom_time => times[0])
+      test_table.insert(:num => nums[1], :created_at => Time.now.utc, :custom_time => times[1])
+      plugin.run(queue)
+      expect(plugin.instance_variable_get("@sql_last_value").class).to eq(Time.parse(times[0]).class)
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq(Time.parse(times[1]))
+      test_table.insert(:num => nums[2], :created_at => Time.now.utc, :custom_time => times[2])
+      test_table.insert(:num => nums[3], :created_at => Time.now.utc, :custom_time => times[3])
+      test_table.insert(:num => nums[4], :created_at => Time.now.utc, :custom_time => times[4])
+      plugin.run(queue)
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq(Time.parse(times[4]))
+    end
+  end
+
   context "when iteratively running plugin#run with tracking_column and stored metadata" do
     let(:mixin_settings) do
       { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
