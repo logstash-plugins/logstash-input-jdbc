@@ -881,7 +881,7 @@ describe LogStash::Inputs::Jdbc do
     let(:logger) { double("logger") }
 
     it "should report the staments to logging" do
-      expect(logger).to receive(:debug).with(kind_of(String)).once
+      expect(logger).to receive(:debug).with(kind_of(String)).twice
       plugin.run(queue)
     end
   end
