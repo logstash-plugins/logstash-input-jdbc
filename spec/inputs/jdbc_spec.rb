@@ -865,8 +865,7 @@ describe LogStash::Inputs::Jdbc do
     let(:num_rows) { 5 }
 
     before do
-      plugin.instance_variable_set("@logger", logger)
-      allow(logger).to receive(:debug?)
+      allow(plugin.logger).to receive(:debug?)
       num_rows.times do
         db[:test_table].insert(:num => 1)
       end
@@ -878,10 +877,8 @@ describe LogStash::Inputs::Jdbc do
       plugin.stop
     end
 
-    let(:logger) { double("logger") }
-
-    it "should report the staments to logging" do
-      expect(logger).to receive(:debug).with(kind_of(String)).once
+    it "should report the statements to logging" do
+      expect(plugin.logger).to receive(:debug).once
       plugin.run(queue)
     end
   end

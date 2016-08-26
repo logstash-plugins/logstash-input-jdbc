@@ -186,6 +186,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   public
 
   def register
+    @logger = self.logger
     require "rufus/scheduler"
     prepare_jdbc_connection
 

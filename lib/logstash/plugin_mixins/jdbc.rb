@@ -8,8 +8,6 @@ require "date"
 # for potential reuse in other plugins (input/output)
 module LogStash::PluginMixins::Jdbc
 
-  @logger = Cabin::Channel.get(LogStash)
-
   # This method is called when someone includes this module
   def self.included(base)
     # Add these methods to the 'base' given.
