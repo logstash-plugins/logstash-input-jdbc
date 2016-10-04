@@ -1,3 +1,6 @@
+## 4.1.2
+ - [internal] Removed docker dependencies for testing
+
 ## 4.1.1
  - Relax constraint on logstash-core-plugin-api to >= 1.60 <= 2.99
 
