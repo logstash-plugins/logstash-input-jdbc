@@ -110,7 +110,7 @@ Reading data from MySQL:
 	  stdout {
 	    codec => rubydebug
 	  }
-	  elasticsearch_http {
+	  elasticsearch {
 	    host => "host"
 	    index => "myindex"
 	  }
