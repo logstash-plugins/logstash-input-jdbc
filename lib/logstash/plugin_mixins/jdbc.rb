@@ -275,6 +275,8 @@ module LogStash::PluginMixins::Jdbc
     if value.is_a?(Time)
       # transform it to LogStash::Timestamp as required by LS
       LogStash::Timestamp.new(value)
+    elsif value.is_a?(Date)
+      LogStash::Timestamp.new(value.to_time)
     elsif value.is_a?(DateTime)
       # Manual timezone conversion detected.
       # This is slower, so we put it in as a conditional case.

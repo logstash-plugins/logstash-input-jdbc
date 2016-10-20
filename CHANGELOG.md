@@ -1,3 +1,6 @@
+## 4.1.3
+ - Fix part1 of #172, coerce SQL DATE to LS Timestamp
+
 ## 4.1.2
  - [internal] Removed docker dependencies for testing
 

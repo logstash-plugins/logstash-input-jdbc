@@ -33,10 +33,12 @@ describe LogStash::Inputs::Jdbc do
       String   :string
       DateTime :custom_time
     end
+    db << "CREATE TABLE types_table (num INTEGER, string VARCHAR(255), started_at DATE, custom_time TIMESTAMP, ranking DECIMAL(16,6))"
   end
 
   after :each do
     db.drop_table(:test_table)
+    db.drop_table(:types_table)
   end
 
   context "when registering and tearing down" do
@@ -1040,6 +1042,40 @@ describe LogStash::Inputs::Jdbc do
         end
         plugin.run(events)
       end
+    end
+  end
+
+  context "when fetching Various Typed data" do
+
+    let(:settings) do
+      {
+      "statement" => "SELECT * from types_table"
+      }
+    end
+    let(:num_rows) { 1 }
+
+    before do
+      num_rows.times do |i|
+        db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '1999-12-31 23:59:59', 95.67)"
+      end
+
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should convert all columns to valid Event acceptable data types" do
+      plugin.run(queue)
+      event = queue.pop
+      expect(event.get("num")).to eq(1)
+      expect(event.get("string")).to eq("A test")
+      expect(event.get("started_at")).to be_a(LogStash::Timestamp)
+      expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00.000Z")
+      expect(event.get("custom_time")).to be_a(LogStash::Timestamp)
+      expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59.000Z")
+      expect(event.get("ranking").to_f).to eq(95.67)
     end
   end
 end
