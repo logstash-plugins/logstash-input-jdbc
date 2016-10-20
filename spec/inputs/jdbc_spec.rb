@@ -1052,12 +1052,9 @@ describe LogStash::Inputs::Jdbc do
       "statement" => "SELECT * from types_table"
       }
     end
-    let(:num_rows) { 1 }
 
     before do
-      num_rows.times do |i|
-        db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '1999-12-31 23:59:59', 95.67)"
-      end
+      db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '1999-12-31 23:59:59', 95.67)"
 
       plugin.register
     end
