@@ -117,7 +117,7 @@ require "yaml" # persistence
 #   jdbc {
 #     statement => "SELECT id, mycolumn1, mycolumn2 FROM my_table WHERE id > :sql_last_value"
 #     use_column_value => true
-#     tracking_column => id
+#     tracking_column => "id"
 #     # ... other configuration bits
 #   }
 # }
