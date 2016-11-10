@@ -147,7 +147,7 @@ describe LogStash::Inputs::Jdbc do
   end
 
 
-  context "when neither statement and statement_filepath arguments are passed" do
+  context "when neither statement, statement_filepath or statements_directory arguments are passed" do
     it "should fail to register" do
       expect{ plugin.register }.to raise_error(LogStash::ConfigurationError)
     end
@@ -157,6 +157,26 @@ describe LogStash::Inputs::Jdbc do
     let(:statement) { "SELECT * from test_table" }
     let(:statement_file_path) { Stud::Temporary.pathname }
     let(:settings) { { "statement_filepath" => statement_file_path, "statement" => statement } }
+
+    it "should fail to register" do
+      expect{ plugin.register }.to raise_error(LogStash::ConfigurationError)
+    end
+  end
+
+  context "when both statement and statements_directory arguments are passed" do
+    let(:statement) { "SELECT * from test_table" }
+    let(:statements_dir) { Stud::Temporary.pathname }
+    let(:settings) { { "statements_directory" => statements_dir, "statement" => statement } }
+
+    it "should fail to register" do
+      expect{ plugin.register }.to raise_error(LogStash::ConfigurationError)
+    end
+  end
+
+  context "when both statement_filepath and statements_directory arguments are passed" do
+    let(:statement_file_path) { Stud::Temporary.pathname }
+    let(:statements_dir) { Stud::Temporary.pathname }
+    let(:settings) { { "statement_filepath" => statement_file_path, "statements_directory" => statements_dir } }
 
     it "should fail to register" do
       expect{ plugin.register }.to raise_error(LogStash::ConfigurationError)
@@ -179,6 +199,32 @@ describe LogStash::Inputs::Jdbc do
 
     it "should read in statement from file" do
       expect(plugin.statement).to eq(statement)
+    end
+  end
+
+  context "when statements_directory is passed" do
+    let(:statements) { ["SELECT * from test_table where num = 1", "SELECT * from test_table where num = 2"] }
+    let(:statements_dir) { Stud::Temporary.directory }
+    let(:settings) { { "statements_directory" => statements_dir } }
+
+    before do
+      File.write(statements_dir + '/statement1', statements[0])
+      File.write(statements_dir + '/statement2', statements[1])
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should execute statements from files" do
+      db[:test_table].insert(:num => 1)
+      db[:test_table].insert(:num => 2)
+
+      plugin.run(queue)
+      expect(queue.size).to eq(2)
+      expect(queue.pop.get('num')).to eq(1)
+      expect(queue.pop.get('num')).to eq(2)
     end
   end
 
