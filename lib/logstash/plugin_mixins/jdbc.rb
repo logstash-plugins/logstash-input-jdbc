@@ -138,8 +138,8 @@ module LogStash::PluginMixins::Jdbc
     end
   end
 
-  public
-  def prepare_jdbc_connection
+  private
+  def open_jdbc_connection
     require "java"
     require "sequel"
     require "sequel/adapters/jdbc"
@@ -173,6 +173,12 @@ module LogStash::PluginMixins::Jdbc
       #TODO return false and let the plugin raise a LogStash::ConfigurationError
       raise e
     end
+  end
+
+  public
+  def prepare_jdbc_connection
+    open_jdbc_connection()
+
     @database.sql_log_level = @sql_log_level.to_sym
     @database.logger = @logger
     if @lowercase_column_names
@@ -229,6 +235,9 @@ module LogStash::PluginMixins::Jdbc
       success = true
     rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
       @logger.warn("Exception when executing JDBC query", :exception => e)
+      @logger.warn("Attempt reconnection.")
+      close_jdbc_connection()
+      open_jdbc_connection()
     else
       @sql_last_value = sql_last_value
     end
