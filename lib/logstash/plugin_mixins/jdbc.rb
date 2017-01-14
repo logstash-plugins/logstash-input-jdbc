@@ -173,11 +173,6 @@ module LogStash::PluginMixins::Jdbc
       #TODO return false and let the plugin raise a LogStash::ConfigurationError
       raise e
     end
-  end
-
-  public
-  def prepare_jdbc_connection
-    open_jdbc_connection()
 
     @database.sql_log_level = @sql_log_level.to_sym
     @database.logger = @logger
@@ -186,6 +181,10 @@ module LogStash::PluginMixins::Jdbc
     else
       @database.identifier_output_method = :to_s
     end
+  end
+
+  public
+  def prepare_jdbc_connection
     if @use_column_value
       case @tracking_column_type
         when "numeric"
@@ -208,6 +207,7 @@ module LogStash::PluginMixins::Jdbc
     success = false
     begin
       parameters = symbolized_params(parameters)
+      open_jdbc_connection if @database == nil
       query = @database[statement, parameters]
       sql_last_value = @use_column_value ? @sql_last_value : Time.now.utc
       @tracking_column_warning_sent = false
