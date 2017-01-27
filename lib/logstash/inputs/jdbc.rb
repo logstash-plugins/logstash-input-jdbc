@@ -62,7 +62,7 @@ require "yaml" # persistence
 # instruct the plugin to execute this input statement on the minute, every minute.
 #
 # [source,ruby]
-# ----------------------------------
+# ------------------------------------------------------------------------------
 # input {
 #   jdbc {
 #     jdbc_driver_library => "mysql-connector-java-5.1.36-bin.jar"
@@ -74,7 +74,7 @@ require "yaml" # persistence
 #     statement => "SELECT * from songs where artist = :favorite_artist"
 #   }
 # }
-# ----------------------------------
+# ------------------------------------------------------------------------------
 #
 # ==== Configuring SQL statement
 #
@@ -112,7 +112,7 @@ require "yaml" # persistence
 #
 # Example:
 # [source,ruby]
-# ----------------------------------
+# ---------------------------------------------------------------------------------------------------
 # input {
 #   jdbc {
 #     statement => "SELECT id, mycolumn1, mycolumn2 FROM my_table WHERE id > :sql_last_value"
@@ -121,7 +121,7 @@ require "yaml" # persistence
 #     # ... other configuration bits
 #   }
 # }
-# ----------------------------------
+# ---------------------------------------------------------------------------------------------------
 #
 class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   include LogStash::PluginMixins::Jdbc
@@ -136,9 +136,9 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # For example:
   #
   # [source, ruby]
-  # ----------------------------------
+  # -----------------------------------------------
   # "SELECT * FROM MYTABLE WHERE id = :target_id"
-  # ----------------------------------
+  # -----------------------------------------------
   #
   # here, ":target_id" is a named parameter. You can configure named parameters
   # with the `parameters` setting.
@@ -187,7 +187,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   #
   # Example:
   # [source,ruby]
-  # ----------------------------------
+  # -------------------------------------------------------
   # input {
   #   jdbc {
   #     ...
@@ -195,6 +195,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   #     ...
   #   }
   # }
+  # -------------------------------------------------------
   # this will only convert column0 that has ISO-8859-1 as an original encoding.
   config :columns_charset, :validate => :hash, :default => {}
 
