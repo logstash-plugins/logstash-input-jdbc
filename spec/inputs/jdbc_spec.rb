@@ -424,7 +424,7 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
-  context "when iteratively running plugin#run with tracking_column" do
+  context "when iteratively running plugin#run with numeric tracking_column" do
     let(:mixin_settings) do
       { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
         "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"
@@ -473,15 +473,17 @@ describe LogStash::Inputs::Jdbc do
     end
 
     let(:settings) do
-      { "statement" => "SELECT num, created_at, custom_time FROM test_table WHERE custom_time > :sql_last_value",
+      { "statement" => "SELECT num, string, created_at, custom_time FROM test_table WHERE custom_time > :sql_last_value",
         "use_column_value" => true,
         "tracking_column" => "custom_time",
         "tracking_column_type" => "timestamp",
         "last_run_metadata_path" => Stud::Temporary.pathname }
     end
 
+
     let(:nums) { [10, 20, 30, 40, 50] }
     let(:times) {["2015-05-06 13:14:15","2015-05-07 13:14:15","2015-05-08 13:14:15","2015-05-09 13:14:15","2015-05-10 13:14:15"]}
+    let(:strings) { ['a', 'b', 'c', 'd', 'e'] }
 
     before do
       plugin.register
@@ -496,20 +498,63 @@ describe LogStash::Inputs::Jdbc do
 
       plugin.run(queue)
       expect(plugin.instance_variable_get("@sql_last_value")).to eq(Time.parse("1970-01-01 00:00:00.000000000 +0000"))
-      test_table.insert(:num => nums[0], :created_at => Time.now.utc, :custom_time => times[0])
-      test_table.insert(:num => nums[1], :created_at => Time.now.utc, :custom_time => times[1])
+      test_table.insert(:num => nums[0], :string => strings[0], :created_at => Time.now.utc, :custom_time => times[0])
+      test_table.insert(:num => nums[1], :string => strings[1], :created_at => Time.now.utc, :custom_time => times[1])
       plugin.run(queue)
       expect(plugin.instance_variable_get("@sql_last_value").class).to eq(Time.parse(times[0]).class)
       expect(plugin.instance_variable_get("@sql_last_value")).to eq(Time.parse(times[1]))
-      test_table.insert(:num => nums[2], :created_at => Time.now.utc, :custom_time => times[2])
-      test_table.insert(:num => nums[3], :created_at => Time.now.utc, :custom_time => times[3])
-      test_table.insert(:num => nums[4], :created_at => Time.now.utc, :custom_time => times[4])
+      test_table.insert(:num => nums[2], :string => strings[2], :created_at => Time.now.utc, :custom_time => times[2])
+      test_table.insert(:num => nums[3], :string => strings[3], :created_at => Time.now.utc, :custom_time => times[3])
+      test_table.insert(:num => nums[4], :string => strings[4], :created_at => Time.now.utc, :custom_time => times[4])
       plugin.run(queue)
       expect(plugin.instance_variable_get("@sql_last_value")).to eq(Time.parse(times[4]))
     end
   end
 
-  context "when iteratively running plugin#run with tracking_column and stored metadata" do
+  context "when iteratively running plugin#run with string tracking_column" do
+    let(:mixin_settings) do
+      { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
+        "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"
+      }
+    end
+
+    let(:settings) do
+      { "statement" => "SELECT num, string, created_at FROM test_table WHERE string > :sql_last_value",
+        "use_column_value" => true,
+        "tracking_column_type" => "string",
+        "tracking_column" => "string",
+        "last_run_metadata_path" => Stud::Temporary.pathname }
+    end
+
+    let(:nums) { [10, 20, 30, 40, 50] }
+    let(:strings) { ['a', 'b', 'c', 'd', 'e'] }
+
+    before do
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should successfully update sql_last_value" do
+      test_table = db[:test_table]
+
+      plugin.run(queue)
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq("")
+      test_table.insert(:num => nums[0], :string => strings[0], :created_at => Time.now.utc)
+      test_table.insert(:num => nums[1], :string => strings[1], :created_at => Time.now.utc)
+      plugin.run(queue)
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq("b")
+      test_table.insert(:num => nums[2], :string => strings[2], :created_at => Time.now.utc)
+      test_table.insert(:num => nums[3], :string => strings[3], :created_at => Time.now.utc)
+      test_table.insert(:num => nums[4], :string => strings[4], :created_at => Time.now.utc)
+      plugin.run(queue)
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq("e")
+    end
+  end
+
+  context "when iteratively running plugin#run with numeric tracking_column and stored metadata" do
     let(:mixin_settings) do
       { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
         "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"
@@ -552,6 +597,54 @@ describe LogStash::Inputs::Jdbc do
       plugin.run(queue)
       expect(queue.length).to eq(3) # Only values greater than 20 should be grabbed.
       expect(plugin.instance_variable_get("@sql_last_value")).to eq(50)
+    end
+  end
+
+  context "when iteratively running plugin#run with string tracking_column and stored metadata" do
+    let(:mixin_settings) do
+      { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
+        "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"
+      }
+    end
+
+    let(:settings) do
+      { "statement" => "SELECT num, string, created_at FROM test_table WHERE string > :sql_last_value",
+        "use_column_value" => true,
+        "tracking_column_type" => 'string',
+        "tracking_column" => "string",
+        "last_run_metadata_path" => Stud::Temporary.pathname }
+    end
+
+    let(:nums) { [10, 20, 30, 40, 50] }
+    let(:strings) { ['a', 'b', 'c', 'd', 'e'] }
+    let(:last_run_value) { 'b' }
+
+    before do
+      File.write(settings["last_run_metadata_path"], YAML.dump(last_run_value))
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should successfully update sql_last_value" do
+      test_table = db[:test_table]
+
+      plugin.run(queue)
+      expect(queue.length).to eq(0)
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq("b")
+      test_table.insert(:string => strings[0], :num => nums[0], :created_at => Time.now.utc)
+      test_table.insert(:string => strings[1], :num => nums[1], :created_at => Time.now.utc)
+      plugin.run(queue)
+      expect(queue.length).to eq(0)
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq('b')
+      test_table.insert(:string => strings[2], :num => nums[2], :created_at => Time.now.utc)
+      test_table.insert(:string => strings[3], :num => nums[3], :created_at => Time.now.utc)
+      test_table.insert(:string => strings[4], :num => nums[4], :created_at => Time.now.utc)
+      plugin.run(queue)
+      expect(queue.length).to eq(3)
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq('e')
     end
   end
 
@@ -627,7 +720,7 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
-  context "when previous runs are to be respected upon successful query execution (by column)" do
+  context "when previous runs are to be respected upon successful query execution (by numeric column)" do
 
     let(:settings) do
       { "statement" => "SELECT 1 as num_param FROM SYSIBM.SYSDUMMY1",
@@ -637,6 +730,33 @@ describe LogStash::Inputs::Jdbc do
     end
 
     let(:last_run_value) { 1 }
+
+    before do
+      File.write(settings["last_run_metadata_path"], YAML.dump(last_run_value))
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "metadata should equal last_run_value" do
+      plugin.run(queue)
+
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq(last_run_value)
+    end
+  end
+
+  context "when previous runs are to be respected upon successful query execution (by string column)" do
+
+    let(:settings) do
+      { "statement" => "SELECT b as string_param FROM SYSIBM.SYSDUMMY1",
+        "use_column_value" => true,
+        "tracking_column" => "string_param",
+        "last_run_metadata_path" => Stud::Temporary.pathname }
+    end
+
+    let(:last_run_value) { 'a' }
 
     before do
       File.write(settings["last_run_metadata_path"], YAML.dump(last_run_value))
@@ -678,7 +798,7 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
-  context "when previous runs are to be respected upon query failure (by column)" do
+  context "when previous runs are to be respected upon query failure (by numeric column)" do
     let(:settings) do
       { "statement" => "SELECT col from non_existent_table",
         "use_column_value" => true,
@@ -688,6 +808,33 @@ describe LogStash::Inputs::Jdbc do
     end
 
     let(:last_run_value) { 1 }
+
+    before do
+      File.write(settings["last_run_metadata_path"], YAML.dump(last_run_value))
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "metadata should still reflect last value" do
+      plugin.run(queue)
+
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq(last_run_value)
+    end
+  end
+
+  context "when previous runs are to be respected upon query failure (by string column)" do
+    let(:settings) do
+      { "statement" => "SELECT col from non_existent_table",
+        "use_column_value" => true,
+        "tracking_column" => "num_param",
+        "last_run_metadata_path" => Stud::Temporary.pathname
+      }
+    end
+
+    let(:last_run_value) { 'b' }
 
     before do
       File.write(settings["last_run_metadata_path"], YAML.dump(last_run_value))
@@ -759,6 +906,34 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when doing a clean run (by string value)" do
+
+    let(:settings) do
+      {
+        "statement" => "SELECT * FROM test_table",
+        "last_run_metadata_path" => Stud::Temporary.pathname,
+        "use_column_value" => true,
+        "tracking_column_type" => "string",
+        "tracking_column" => "string_param",
+        "clean_run" => true
+      }
+    end
+
+    let(:last_run_value) { 'abcd' }
+
+    before do
+      File.write(settings["last_run_metadata_path"], YAML.dump(last_run_value))
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should ignore last run metadata if :clean_run set to true" do
+      expect(plugin.instance_variable_get("@sql_last_value")).to eq("")
+    end
+  end
 
   context "when state is not to be persisted" do
     let(:settings) do
