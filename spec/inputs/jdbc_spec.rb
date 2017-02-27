@@ -916,7 +916,7 @@ describe LogStash::Inputs::Jdbc do
       it "the field names are lower case" do
         plugin.run(events)
         expect(events.first.to_hash.keys.sort).to eq(
-          ["@timestamp", "@version","num", "somestring"])
+          ["@timestamp", "@version","num", "somestring", "tags"])
       end
     end
 
@@ -925,7 +925,7 @@ describe LogStash::Inputs::Jdbc do
       it "the field names are UPPER case (natural for Derby DB)" do
         plugin.run(events)
         expect(events.first.to_hash.keys.sort).to eq(
-          ["@timestamp", "@version","NUM", "SOMESTRING"])
+          ["@timestamp", "@version","NUM", "SOMESTRING", "tags"])
       end
     end
   end
@@ -979,11 +979,14 @@ describe LogStash::Inputs::Jdbc do
         "column1" => "bar".force_encoding(Encoding::ISO_8859_1),
         "column2" => 3
       }
+      event = LogStash::Event.new(row)
       expect(LogStash::Event).to receive(:new) do |row|
         row.each do |k, v|
           next unless v.is_a?(String)
           expect(row[k].encoding).to eq(encoded_row[k].encoding)
         end
+
+        event
       end
       plugin.run(events)
     end
@@ -1011,11 +1014,14 @@ describe LogStash::Inputs::Jdbc do
           "column1" => "bar",
           "column2" => 3
         }
+        event = LogStash::Event.new(row)
         expect(LogStash::Event).to receive(:new) do |row|
           row.each do |k, v|
             next unless v.is_a?(String)
             expect(row[k].encoding).to eq(encoded_row[k].encoding)
           end
+          
+          event
         end
         plugin.run(events)
       end
@@ -1046,11 +1052,14 @@ describe LogStash::Inputs::Jdbc do
           "column2" => 3,
           "column3" => "berlin".force_encoding(Encoding::ASCII_8BIT)
         }
+        event = LogStash::Event.new(row)
         expect(LogStash::Event).to receive(:new) do |row|
           row.each do |k, v|
             next unless v.is_a?(String)
             expect(row[k].encoding).to eq(encoded_row[k].encoding)
           end
+
+          event
         end
         plugin.run(events)
       end
