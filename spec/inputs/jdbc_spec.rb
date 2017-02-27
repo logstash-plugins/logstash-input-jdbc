@@ -59,6 +59,7 @@ describe LogStash::Inputs::Jdbc do
       mixin_settings['jdbc_driver_library'] = '/foo/bar,/bar/foo'
       expect(plugin).to receive(:load_drivers).with(['/foo/bar', '/bar/foo'])
       plugin.register
+      plugin.run(queue) # load when first run
       plugin.stop
     end
 
@@ -66,6 +67,7 @@ describe LogStash::Inputs::Jdbc do
       mixin_settings['jdbc_driver_library'] = '/foo/bar'
       expect(plugin).to receive(:load_drivers).with(['/foo/bar'])
       plugin.register
+      plugin.run(queue) # load when first run
       plugin.stop
     end
 
@@ -819,7 +821,10 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "should fail" do
-      expect { plugin.register }.to raise_error(LogStash::ConfigurationError)
+      expect do
+        plugin.register
+        plugin.run(queue) # load when first run
+      end.to raise_error(LogStash::ConfigurationError)
     end
   end
 
@@ -837,6 +842,7 @@ describe LogStash::Inputs::Jdbc do
 
     it "should raise PoolTimeout error" do
       plugin.register
+      plugin.run(queue)
       db = plugin.instance_variable_get(:@database)
       expect(db.pool.instance_variable_get(:@timeout)).to eq(0)
       expect(db.pool.instance_variable_get(:@max_size)).to eq(1)
@@ -852,7 +858,10 @@ describe LogStash::Inputs::Jdbc do
     it "should log error message" do
       allow(Sequel).to receive(:connect).and_raise(Sequel::PoolTimeout)
       expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Tried 1 times.")
-      expect { plugin.register }.to raise_error(Sequel::PoolTimeout)
+      expect do
+        plugin.register
+        plugin.run(queue)
+      end.to raise_error(Sequel::PoolTimeout)
     end
   end
 
@@ -930,7 +939,10 @@ describe LogStash::Inputs::Jdbc do
       allow(Sequel).to receive(:connect).and_raise(Sequel::PoolTimeout)
       expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Trying again.")
       expect(plugin.logger).to receive(:error).with("Failed to connect to database. 0 second timeout exceeded. Tried 2 times.")
-      expect { plugin.register }.to raise_error(Sequel::PoolTimeout)
+      expect do
+        plugin.register
+        plugin.run(queue)
+      end.to raise_error(Sequel::PoolTimeout)
     end
 
     it "should not fail when passed a non-positive value" do
