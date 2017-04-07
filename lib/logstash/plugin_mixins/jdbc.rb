@@ -143,6 +143,7 @@ module LogStash::PluginMixins::Jdbc
     require "java"
     require "sequel"
     require "sequel/adapters/jdbc"
+    require "sequel/adapters/jdbc/transactions"
     load_drivers(@jdbc_driver_library.split(",")) if @jdbc_driver_library
 
     begin
@@ -157,6 +158,7 @@ module LogStash::PluginMixins::Jdbc
       raise LogStash::ConfigurationError, "#{e}. #{message}"
     end
     @database = jdbc_connect()
+    @database.extend(Sequel::JDBC::Transactions)
     @database.extension(:pagination)
     if @jdbc_default_timezone
       @database.extension(:named_timezones)
@@ -207,9 +209,19 @@ module LogStash::PluginMixins::Jdbc
       @tracking_column_warning_sent = false
       @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters)
 
-      if @jdbc_paging_enabled
-        query.each_page(@jdbc_page_size) do |paged_dataset|
-          paged_dataset.each do |row|
+      @database.transaction do
+        if @jdbc_paging_enabled
+          query.each_page(@jdbc_page_size) do |paged_dataset|
+            paged_dataset.each do |row|
+              sql_last_value = get_column_value(row) if @use_column_value
+              if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
+                sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
+              end
+              yield extract_values_from(row)
+            end
+          end
+        else
+          query.each do |row|
             sql_last_value = get_column_value(row) if @use_column_value
             if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
               sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
@@ -217,14 +229,7 @@ module LogStash::PluginMixins::Jdbc
             yield extract_values_from(row)
           end
         end
-      else
-        query.each do |row|
-          sql_last_value = get_column_value(row) if @use_column_value
-          if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
-            sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
-          end
-          yield extract_values_from(row)
-        end
+        raise Sequel::Rollback
       end
       success = true
     rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e

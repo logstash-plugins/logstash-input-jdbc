@@ -880,7 +880,7 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "should report the statements to logging" do
-      expect(plugin.logger).to receive(:debug).once
+      expect(plugin.logger).to receive(:debug).thrice
       plugin.run(queue)
     end
   end
