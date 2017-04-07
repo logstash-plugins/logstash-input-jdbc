@@ -833,7 +833,7 @@ describe LogStash::Inputs::Jdbc do
       {
         "statement" => "SELECT * FROM test_table",
         "jdbc_pool_timeout" => 0,
-        "jdbc_connection_string" => 'mock://localhost:1527/db',
+        "jdbc_connection_string" => 'jdbc:derby:memory:testdb;create=true',
         "sequel_opts" => {
           "max_connections" => 1
         }
@@ -889,7 +889,7 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "should report the statements to logging" do
-      expect(plugin.logger).to receive(:debug).once
+      expect(plugin.logger).to receive(:debug).thrice
       plugin.run(queue)
     end
   end
