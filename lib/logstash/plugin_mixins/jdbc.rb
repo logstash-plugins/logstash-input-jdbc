@@ -218,7 +218,7 @@ module LogStash::PluginMixins::Jdbc
       query = @database[statement, parameters]
       sql_last_value = @use_column_value ? @sql_last_value : Time.now.utc
       @tracking_column_warning_sent = false
-      @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
+      @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters)
 
       if @jdbc_paging_enabled
         query.each_page(@jdbc_page_size) do |paged_dataset|
