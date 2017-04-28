@@ -1,3 +1,6 @@
+## 4.2.0
+ - Auto-reconnect on failure https://github.com/logstash-plugins/logstash-input-jdbc/pull/185
+
 ## 4.1.3
  - Fix part1 of #172, coerce SQL DATE to LS Timestamp
 
