@@ -179,6 +179,9 @@ module LogStash::PluginMixins::Jdbc
 
     @database.sql_log_level = @sql_log_level.to_sym
     @database.logger = @logger
+
+    @database.extension :identifier_mangling
+
     if @lowercase_column_names
       @database.identifier_output_method = :downcase
     else
