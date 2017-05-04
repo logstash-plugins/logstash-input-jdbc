@@ -209,6 +209,8 @@ module LogStash::PluginMixins::Jdbc
       @tracking_column_warning_sent = false
       @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters)
 
+      # Execute query in transaction cause PG driver require autocommit off for set fetch count
+      # See: https://jdbc.postgresql.org/documentation/head/query.html
       @database.transaction do
         if @jdbc_paging_enabled
           query.each_page(@jdbc_page_size) do |paged_dataset|
