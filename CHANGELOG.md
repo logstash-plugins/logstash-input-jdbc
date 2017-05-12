@@ -1,3 +1,9 @@
+## 4.2.0
+ - Automatically reconnect on connection issues
+ - Fix test failures
+ - Explicitly load identifier mangling from Sequel to prevent
+   warning logs
+
 ## 4.1.3
  - Fix part1 of #172, coerce SQL DATE to LS Timestamp
 

@@ -138,8 +138,8 @@ module LogStash::PluginMixins::Jdbc
     end
   end
 
-  public
-  def prepare_jdbc_connection
+  private
+  def open_jdbc_connection
     require "java"
     require "sequel"
     require "sequel/adapters/jdbc"
@@ -172,16 +172,27 @@ module LogStash::PluginMixins::Jdbc
     begin
       @database.test_connection
     rescue Sequel::DatabaseConnectionError => e
+      @logger.warn("Failed test_connection.")
+      @database.close_jdbc_connection
+
       #TODO return false and let the plugin raise a LogStash::ConfigurationError
       raise e
     end
+
     @database.sql_log_level = @sql_log_level.to_sym
     @database.logger = @logger
+
+    @database.extension :identifier_mangling
+
     if @lowercase_column_names
       @database.identifier_output_method = :downcase
     else
       @database.identifier_output_method = :to_s
     end
+  end
+
+  public
+  def prepare_jdbc_connection
     if @use_column_value
       case @tracking_column_type
         when "numeric"
@@ -197,6 +208,7 @@ module LogStash::PluginMixins::Jdbc
   public
   def close_jdbc_connection
     @database.disconnect if @database
+    @database = nil
   end
 
   public
@@ -204,6 +216,7 @@ module LogStash::PluginMixins::Jdbc
     success = false
     begin
       parameters = symbolized_params(parameters)
+      open_jdbc_connection if @database == nil
       query = @database[statement, parameters]
       sql_last_value = @use_column_value ? @sql_last_value : Time.now.utc
       @tracking_column_warning_sent = false
@@ -236,6 +249,9 @@ module LogStash::PluginMixins::Jdbc
       success = true
     rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
       @logger.warn("Exception when executing JDBC query", :exception => e)
+      @logger.warn("Attempt reconnection.")
+      close_jdbc_connection()
+      open_jdbc_connection()
     else
       @sql_last_value = sql_last_value
     end
