@@ -1,3 +1,6 @@
+## 4.2.1
+ - Wrap queries in rolled back transactions to work better with PostgreSQL
+
 ## 4.2.0
  - Automatically reconnect on connection issues
  - Fix test failures
