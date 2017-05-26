@@ -1,4 +1,10 @@
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in logstash-mass_effect.gemspec
 gemspec
+
+logstash_path = "../../logstash"
+
+if Dir.exist?(logstash_path) && ENV["LOGSTASH_SOURCE"] == 1
+  gem 'logstash-core', :path => "#{logstash_path}/logstash-core"
+  gem 'logstash-core-plugin-api', :path => "#{logstash_path}/logstash-core-plugin-api"
+end
