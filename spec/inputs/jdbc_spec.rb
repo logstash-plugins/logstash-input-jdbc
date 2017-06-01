@@ -916,7 +916,7 @@ describe LogStash::Inputs::Jdbc do
       it "the field names are lower case" do
         plugin.run(events)
         expect(events.first.to_hash.keys.sort).to eq(
-          ["@timestamp", "@version","num", "somestring"])
+          ["@timestamp", "@version","num", "somestring", "tags"])
       end
     end
 
@@ -925,7 +925,7 @@ describe LogStash::Inputs::Jdbc do
       it "the field names are UPPER case (natural for Derby DB)" do
         plugin.run(events)
         expect(events.first.to_hash.keys.sort).to eq(
-          ["@timestamp", "@version","NUM", "SOMESTRING"])
+          ["@timestamp", "@version","NUM", "SOMESTRING", "tags"])
       end
     end
   end
