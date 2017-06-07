@@ -232,7 +232,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       raise(LogStash::ConfigurationError, "Only one of :jdbc_password, :jdbc_password_filepath may be set at a time.")
     end
 
-    @jdbc_password = File.read(@jdbc_password_filepath).strip if @jdbc_password_filepath
+    @jdbc_password = LogStash::Util::Password.new(File.read(@jdbc_password_filepath).strip) if @jdbc_password_filepath
 
     if enable_encoding?
       @converters = {}

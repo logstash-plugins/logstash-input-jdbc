@@ -117,7 +117,7 @@ describe LogStash::Inputs::Jdbc do
     end
 
     it "should read in jdbc_password from file" do
-      expect(plugin.jdbc_password).to eq(jdbc_password)
+      expect(plugin.jdbc_password.value).to eq(jdbc_password)
     end
   end
 
