@@ -245,7 +245,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
   def run(queue)
     if @schedule
-      @scheduler = Rufus::Scheduler.new(:max_work_threads => 1)
+      @scheduler = Rufus::Scheduler.new(:max_work_threads => 1,  :frequency => 30)
       @scheduler.cron @schedule do
         execute_query(queue)
         update_state_file
