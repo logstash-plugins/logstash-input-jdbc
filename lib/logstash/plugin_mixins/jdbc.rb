@@ -251,6 +251,28 @@ module LogStash::PluginMixins::Jdbc
     return success
   end
 
+
+  public
+  def execute_update_statement(statement, parameters)
+    success = false
+    begin
+      parameters = symbolized_params(parameters)
+      open_jdbc_connection if @database == nil
+      query = @database[statement, parameters]
+      @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
+	  
+	  query.update
+
+      success = true
+    rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
+      @logger.warn("Exception when executing JDBC query", :exception => e)
+      @logger.warn("Attempt reconnection.")
+      close_jdbc_connection()
+      open_jdbc_connection()
+    end
+    return success
+  end
+
   public
   def get_column_value(row)
     if !row.has_key?(@tracking_column.to_sym)
