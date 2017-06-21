@@ -147,7 +147,8 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # Path of file containing statement to execute
   config :statement_filepath, :validate => :path
 
-  # Statement to be executed after reading each record found
+  # Statement to be executed after reading each record found. You can use values
+  # from  `parameters`, plus the values from the record
   config :post_statement, :validate => :string, :default => nil
 
   # Path of file containing statement to be executed after reading each record found
