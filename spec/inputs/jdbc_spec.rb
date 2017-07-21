@@ -2,6 +2,8 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/jdbc"
 require "jdbc/derby"
+require "jdbc/mysql"
+Jdbc::MySQL.load_driver
 require "sequel"
 require "sequel/adapters/jdbc"
 require "timecop"
@@ -26,19 +28,24 @@ describe LogStash::Inputs::Jdbc do
   end
 
   before :each do
-    Jdbc::Derby.load_driver
-    db.create_table :test_table do
-      DateTime :created_at
-      Integer  :num
-      String   :string
-      DateTime :custom_time
+    if !RSpec.current_example.metadata[:no_connection]
+      # before body
+      Jdbc::Derby.load_driver
+      db.create_table :test_table do
+        DateTime :created_at
+        Integer  :num
+        String   :string
+        DateTime :custom_time
+      end
+      db << "CREATE TABLE types_table (num INTEGER, string VARCHAR(255), started_at DATE, custom_time TIMESTAMP, ranking DECIMAL(16,6))"
     end
-    db << "CREATE TABLE types_table (num INTEGER, string VARCHAR(255), started_at DATE, custom_time TIMESTAMP, ranking DECIMAL(16,6))"
   end
 
   after :each do
-    db.drop_table(:test_table)
-    db.drop_table(:types_table)
+    if !RSpec.current_example.metadata[:no_connection]
+      db.drop_table(:test_table)
+      db.drop_table(:types_table)
+    end
   end
 
   context "when registering and tearing down" do
@@ -84,6 +91,24 @@ describe LogStash::Inputs::Jdbc do
         }
       end
       let(:config) { mixin_settings.merge(settings) }
+    end
+  end
+
+  context "when connecting to a non-existent server", :no_connection => true do
+    let(:mixin_settings) do
+      super.merge(
+        "jdbc_driver_class" => "com.mysql.jdbc.Driver",
+        "jdbc_connection_string" => "jdbc:mysql://localhost:99999/somedb"
+      )
+    end
+    let(:settings) { super.merge("statement" => "SELECT 1 as col1 FROM test_table", "jdbc_user" => "foo", "jdbc_password" => "bar") }
+
+    it "should not register correctly" do
+        plugin.register
+        q = Queue.new
+        expect do
+          plugin.run(q)
+        end.to raise_error(::Sequel::DatabaseConnectionError)
     end
   end
 
