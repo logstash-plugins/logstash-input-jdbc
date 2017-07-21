@@ -1,3 +1,6 @@
+## 4.2.1
+ - Fix bug where failed healthchecks would not call a non-existant method and suppress the real error
+
 ## 4.2.0
  - Automatically reconnect on connection issues
  - Fix test failures
