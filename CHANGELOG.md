@@ -1,3 +1,6 @@
+## 4.2.3
+  - Fix some documentation issues
+
 ## 4.2.1
  - Fix bug where failed healthchecks would not call a non-existant method and suppress the real error
 
