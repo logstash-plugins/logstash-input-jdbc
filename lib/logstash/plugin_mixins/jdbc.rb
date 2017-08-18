@@ -205,7 +205,11 @@ module LogStash::PluginMixins::Jdbc
 
   public
   def close_jdbc_connection
-    @database.disconnect if @database
+    begin
+      @database.disconnect if @database
+    rescue => e
+      @logger.warn("Failed to close connection", :exception => e)
+    end
     @database = nil
   end
 
