@@ -170,7 +170,7 @@ module LogStash::PluginMixins::Jdbc
     begin
       @database.test_connection
     rescue Sequel::DatabaseConnectionError => e
-      @logger.warn("Failed test_connection.")
+      @logger.warn("Failed test_connection.", :exception => e)
       close_jdbc_connection
 
       #TODO return false and let the plugin raise a LogStash::ConfigurationError
