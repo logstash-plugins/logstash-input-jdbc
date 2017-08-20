@@ -1,3 +1,7 @@
+## 4.2.4
+  - [#220](https://github.com/logstash-plugins/logstash-input-jdbc/issues/220) Log exception when database connection test fails
+  - Database reconnect: Mark old connection as dead even when clean disconnect fails.
+
 ## 4.2.3
   - Fix some documentation issues
 
