@@ -219,23 +219,32 @@ module LogStash::PluginMixins::Jdbc
     begin
       parameters = symbolized_params(parameters)
       open_jdbc_connection if @database == nil
-      query = @database[statement, parameters]
       sql_last_value = @use_column_value ? @sql_last_value : Time.now.utc
       @tracking_column_warning_sent = false
-      @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
-
+      @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters)
+      
       if @jdbc_paging_enabled
-        query.each_page(@jdbc_page_size) do |paged_dataset|
-          paged_dataset.each do |row|
-            sql_last_value = get_column_value(row) if @use_column_value
-            if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
-              sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
+        is_last_page = false
+        offset = 0
+
+        until is_last_page
+            decorated_statement = statement + " LIMIT " + @jdbc_page_size.to_s + " OFFSET " + offset.to_s
+            ds = @database[decorated_statement, parameters]
+            results = ds.all
+            results.each do |row|
+                sql_last_value = get_column_value(row) if @use_column_value
+                if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
+                  sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
+                end
+                yield extract_values_from(row)
             end
-            yield extract_values_from(row)
-          end
+
+            is_last_page = results.length < @jdbc_page_size
+            offset = offset + @jdbc_page_size
         end
       else
-        query.each do |row|
+        ds = @database[statement, parameters]
+        ds.each do |row|
           sql_last_value = get_column_value(row) if @use_column_value
           if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
             sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
