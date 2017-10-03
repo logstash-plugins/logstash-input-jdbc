@@ -210,15 +210,14 @@ module LogStash::PluginMixins::Jdbc
     rescue => e
       @logger.warn("Failed to close connection", :exception => e)
     end
-    @database = nil
   end
 
   public
   def execute_statement(statement, parameters)
     success = false
+    open_jdbc_connection
     begin
       parameters = symbolized_params(parameters)
-      open_jdbc_connection if @database == nil
       query = @database[statement, parameters]
       sql_last_value = @use_column_value ? @sql_last_value : Time.now.utc
       @tracking_column_warning_sent = false
@@ -246,12 +245,10 @@ module LogStash::PluginMixins::Jdbc
       success = true
     rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
       @logger.warn("Exception when executing JDBC query", :exception => e)
-      @logger.warn("Attempt reconnection.")
-      close_jdbc_connection()
-      open_jdbc_connection()
     else
       @sql_last_value = sql_last_value
     end
+    close_jdbc_connection
     return success
   end
 
