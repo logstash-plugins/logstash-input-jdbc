@@ -1,3 +1,6 @@
+## 4.3.1
+  - Update gemspec summary
+
 ## 4.3.0  
   - [#147](https://github.com/logstash-plugins/logstash-input-jdbc/issues/147) Open and close connection for each query 
 
