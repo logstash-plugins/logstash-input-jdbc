@@ -259,9 +259,8 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   end # def run
 
   def stop
-    @scheduler.stop if @scheduler
-
     close_jdbc_connection
+    @scheduler.stop if @scheduler
   end
 
   private
