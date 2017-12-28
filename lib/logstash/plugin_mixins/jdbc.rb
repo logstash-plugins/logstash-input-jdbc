@@ -232,24 +232,12 @@ module LogStash::PluginMixins::Jdbc
         @tracking_column_warning_sent = false
         @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
 
-        if @jdbc_paging_enabled
-          query.each_page(@jdbc_page_size) do |paged_dataset|
-            paged_dataset.each do |row|
-              sql_last_value = get_column_value(row) if @use_column_value
-              if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
-                sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
-              end
-              yield extract_values_from(row)
-            end
+        perform_query(query) do |row|
+          sql_last_value = get_column_value(row) if @use_column_value
+          if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
+            sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
           end
-        else
-          query.each do |row|
-            sql_last_value = get_column_value(row) if @use_column_value
-            if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
-              sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
-            end
-            yield extract_values_from(row)
-          end
+          yield extract_values_from(row)
         end
         success = true
       rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
@@ -261,6 +249,24 @@ module LogStash::PluginMixins::Jdbc
         @connection_lock.unlock
       end
       return success
+  end
+
+  # Performs the query, respecting our pagination settings, yielding once per row of data
+  # @param query [Sequel::Dataset]
+  # @yieldparam row [Hash{Symbol=>Object}]
+  private
+  def perform_query(query)
+    if @jdbc_paging_enabled
+      query.each_page(@jdbc_page_size) do |paged_dataset|
+        paged_dataset.each do |row|
+          yield row
+        end
+      end
+    else
+      query.each do |row|
+        yield row
+      end
+    end
   end
 
   public
