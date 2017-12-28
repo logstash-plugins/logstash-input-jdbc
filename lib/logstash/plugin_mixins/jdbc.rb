@@ -235,7 +235,7 @@ module LogStash::PluginMixins::Jdbc
         perform_query(query) do |row|
           sql_last_value = get_column_value(row) if @use_column_value
           if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
-            sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
+            sql_last_value = sql_last_value.to_time # Coerce the timestamp to a `Time`
           end
           yield extract_values_from(row)
         end
