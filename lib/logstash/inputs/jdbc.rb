@@ -143,6 +143,9 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # here, ":target_id" is a named parameter. You can configure named parameters
   # with the `parameters` setting.
   config :statement, :validate => :string
+  
+  # Statement to execute that will determine the highest used id
+  config :highest_id_statement, :validate => :string
 
   # Path of file containing statement to execute
   config :statement_filepath, :validate => :path
@@ -181,6 +184,9 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # The character encoding of all columns, leave empty if the columns are already properly UTF-8 
   # encoded. Specific columns charsets using :columns_charset can override this setting.
   config :charset, :validate => :string
+  
+  # The fully qualified name of the ID column. It is needed to decorate the SQL statement with the correct WHERE clause.
+  config :sql_id_fully_qualified_name, :validate => :string
 
   # The character encoding for specific columns. This option will override the `:charset` option 
   # for the specified columns.

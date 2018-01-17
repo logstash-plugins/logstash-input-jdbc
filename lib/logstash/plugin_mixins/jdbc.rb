@@ -227,23 +227,42 @@ module LogStash::PluginMixins::Jdbc
       open_jdbc_connection
       begin
         parameters = symbolized_params(parameters)
-        query = @database[statement, parameters]
         sql_last_value = @use_column_value ? @sql_last_value : Time.now.utc
         @tracking_column_warning_sent = false
-        @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
+        @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters)
 
-        if @jdbc_paging_enabled
-          query.each_page(@jdbc_page_size) do |paged_dataset|
-            paged_dataset.each do |row|
-              sql_last_value = get_column_value(row) if @use_column_value
-              if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
-                sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
-              end
-              yield extract_values_from(row)
-            end
+        if @jdbc_paging_enabled	  
+          if @highest_id_statement.nil?
+            raise(LogStash::ConfigurationError, "if pagination is enabled, highest_id_statement must be set.")
           end
+          
+          if @sql_id_fully_qualified_name.nil?
+            raise(LogStash::ConfigurationError, "if pagination is enabled, sql_id_fully_qualified_name must be set.")
+          end
+			
+          highest_id = @database[@highest_id_statement].single_value
+          has_finished_import = highest_id <= sql_last_value
+          offset = sql_last_value
+
+          until has_finished_import
+            lower_boundary = offset
+            higher_boundary = highest_id <= offset + @jdbc_page_size ? highest_id : offset + @jdbc_page_size
+            decorated_statement = statement + " WHERE " + @sql_id_fully_qualified_name + " > " + lower_boundary.to_s + " AND " + @sql_id_fully_qualified_name + " <= " + higher_boundary.to_s
+            ds = @database[decorated_statement, parameters]
+            ds.each do |row|
+                sql_last_value = get_column_value(row) if @use_column_value
+                if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
+                  sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
+                end
+                yield extract_values_from(row)
+            end
+
+            has_finished_import = highest_id <= offset + @jdbc_page_size
+            offset = offset + @jdbc_page_size
+        end
         else
-          query.each do |row|
+          ds = @database[statement, parameters]
+          ds.each do |row|
             sql_last_value = get_column_value(row) if @use_column_value
             if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
               sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
