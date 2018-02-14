@@ -103,7 +103,8 @@ module LogStash::PluginMixins::Jdbc
     opts = {
       :user => @jdbc_user,
       :password => @jdbc_password.nil? ? nil : @jdbc_password.value,
-      :pool_timeout => @jdbc_pool_timeout
+      :pool_timeout => @jdbc_pool_timeout,
+      :keep_reference => false
     }.merge(@sequel_opts)
     retry_attempts = @connection_retry_attempts
     loop do

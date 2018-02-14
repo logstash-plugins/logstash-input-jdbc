@@ -1,3 +1,6 @@
+## 4.3.4
+  - [#261](https://github.com/logstash-plugins/logstash-input-jdbc/issues/261) Fix memory leak.
+  
 ## 4.3.3
   - [#255](https://github.com/logstash-plugins/logstash-input-jdbc/issues/255) Fix thread and memory leak.
   
