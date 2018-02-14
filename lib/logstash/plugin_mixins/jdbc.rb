@@ -3,6 +3,7 @@
 require "logstash/config/mixin"
 require "time"
 require "date"
+require "logstash/plugin_mixins/value_tracking"
 
 java_import java.util.concurrent.locks.ReentrantLock
 
@@ -195,17 +196,7 @@ module LogStash::PluginMixins::Jdbc
   public
   def prepare_jdbc_connection
     @connection_lock = ReentrantLock.new
-    if @use_column_value
-      case @tracking_column_type
-        when "numeric"
-          @sql_last_value = 0
-        when "timestamp"
-          @sql_last_value = Time.at(0).utc
-      end
-    else
-      @sql_last_value = Time.at(0).utc
-    end
-  end # def prepare_jdbc_connection
+  end
 
   public
   def close_jdbc_connection
@@ -229,22 +220,20 @@ module LogStash::PluginMixins::Jdbc
       begin
         parameters = symbolized_params(parameters)
         query = @database[statement, parameters]
-        sql_last_value = @use_column_value ? @sql_last_value : Time.now.utc
+
+        sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
         @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
 
         perform_query(query) do |row|
           sql_last_value = get_column_value(row) if @use_column_value
-          if @tracking_column_type=="timestamp" and @use_column_value and sql_last_value.is_a?(DateTime)
-            sql_last_value = sql_last_value.to_time # Coerce the timestamp to a `Time`
-          end
           yield extract_values_from(row)
         end
         success = true
       rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
         @logger.warn("Exception when executing JDBC query", :exception => e)
       else
-        @sql_last_value = sql_last_value
+        @value_tracker.set_value(sql_last_value)
       ensure
         close_jdbc_connection
         @connection_lock.unlock

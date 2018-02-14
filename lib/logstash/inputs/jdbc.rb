@@ -2,7 +2,7 @@
 require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc"
-require "yaml" # persistence
+
 
 # This plugin was created as a way to ingest data from any database
 # with a JDBC interface into Logstash. You can periodically schedule ingestion
@@ -206,21 +206,16 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     require "rufus/scheduler"
     prepare_jdbc_connection
 
-    # Raise an error if @use_column_value is true, but no @tracking_column is set
     if @use_column_value
+      # Raise an error if @use_column_value is true, but no @tracking_column is set
       if @tracking_column.nil?
         raise(LogStash::ConfigurationError, "Must set :tracking_column if :use_column_value is true.")
       end
     end
 
-    @enable_encoding = !@charset.nil? || !@columns_charset.empty?
+    @value_tracker = LogStash::PluginMixins::ValueTracking.build_last_value_tracker(self)
 
-    # load sql_last_value from file if exists
-    if @clean_run && File.exist?(@last_run_metadata_path)
-      File.delete(@last_run_metadata_path)
-    elsif File.exist?(@last_run_metadata_path)
-      @sql_last_value = YAML.load(File.read(@last_run_metadata_path))
-    end
+    @enable_encoding = !@charset.nil? || !@columns_charset.empty?
 
     unless @statement.nil? ^ @statement_filepath.nil?
       raise(LogStash::ConfigurationError, "Must set either :statement or :statement_filepath. Only one may be set at a time.")
@@ -248,13 +243,11 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       @scheduler = Rufus::Scheduler.new(:max_work_threads => 1)
       @scheduler.cron @schedule do
         execute_query(queue)
-        update_state_file
       end
 
       @scheduler.join
     else
       execute_query(queue)
-      update_state_file
     end
   end # def run
 
@@ -267,7 +260,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
 
   def execute_query(queue)
     # update default parameters
-    @parameters['sql_last_value'] = @sql_last_value
+    @parameters['sql_last_value'] = @value_tracker.value
     execute_statement(@statement, @parameters) do |row|
       if enable_encoding?
         ## do the necessary conversions to string elements
@@ -277,12 +270,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       decorate(event)
       queue << event
     end
-  end
-
-  def update_state_file
-    if @record_last_run
-      File.write(@last_run_metadata_path, YAML.dump(@sql_last_value))
-    end
+    @value_tracker.write
   end
 
   private
