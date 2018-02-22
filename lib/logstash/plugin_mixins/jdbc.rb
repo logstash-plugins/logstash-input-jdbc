@@ -116,7 +116,7 @@ module LogStash::PluginMixins::Jdbc
           @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Tried #{@connection_retry_attempts} times.")
           raise e
         else
-          @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Trying again.")  
+          @logger.error("Failed to connect to database. #{@jdbc_pool_timeout} second timeout exceeded. Trying again.")
         end
       rescue Sequel::Error => e
         if retry_attempts <= 0
@@ -201,6 +201,8 @@ module LogStash::PluginMixins::Jdbc
           @sql_last_value = 0
         when "timestamp"
           @sql_last_value = Time.at(0).utc
+        when "string"
+          @sql_last_value = ""
       end
     else
       @sql_last_value = Time.at(0).utc
