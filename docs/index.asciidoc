@@ -365,7 +365,7 @@ How often to validate a connection (in seconds)
 ===== `last_run_metadata_path` 
 
   * Value type is <<string,string>>
-  * Default value is `"/home/ph/.logstash_jdbc_last_run"`
+  * Default value is `"#{ENV['HOME']}/.logstash_jdbc_last_run"`
 
 Path to file with last run time
 
