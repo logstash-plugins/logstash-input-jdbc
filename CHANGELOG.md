@@ -1,17 +1,20 @@
+## 4.3.5
+  - [#140](https://github.com/logstash-plugins/logstash-input-jdbc/issues/140) Fix long standing bug where setting jdbc_default_timezone loses milliseconds. Force all usage of sql_last_value to be typed according to the settings.
+
 ## 4.3.4
   - [#261](https://github.com/logstash-plugins/logstash-input-jdbc/issues/261) Fix memory leak.
-  
+
 ## 4.3.3
   - [#255](https://github.com/logstash-plugins/logstash-input-jdbc/issues/255) Fix thread and memory leak.
-  
+
 ## 4.3.2
   - [#251](https://github.com/logstash-plugins/logstash-input-jdbc/issues/251) Fix connection and memory leak.
-  
+
 ## 4.3.1
   - Update gemspec summary
 
-## 4.3.0  
-  - [#147](https://github.com/logstash-plugins/logstash-input-jdbc/issues/147) Open and close connection for each query 
+## 4.3.0
+  - [#147](https://github.com/logstash-plugins/logstash-input-jdbc/issues/147) Open and close connection for each query
 
 ## 4.2.4
   - [#220](https://github.com/logstash-plugins/logstash-input-jdbc/issues/220) Log exception when database connection test fails
