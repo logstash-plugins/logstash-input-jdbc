@@ -69,6 +69,8 @@ module LogStash module PluginMixins
     def set_value(value)
       if value.respond_to?(:to_datetime)
         @value = value.to_datetime
+      else
+        @value = DateTime.parse(value)
       end
     end
   end
@@ -81,6 +83,8 @@ module LogStash module PluginMixins
     def set_value(value)
       if value.respond_to?(:to_time)
         @value = value.to_time
+      else
+        @value = DateTime.parse(value).to_time
       end
     end
   end

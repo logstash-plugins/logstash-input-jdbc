@@ -739,6 +739,65 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when previous runs are to be respected upon successful query execution (by time string)" do
+
+    let(:settings) do
+      { "statement" => "SELECT custom_time FROM test_table WHERE custom_time > :sql_last_value",
+        "use_column_value" => true,
+        "tracking_column" => "custom_time",
+        "tracking_column_type" => "timestamp",
+        "last_run_metadata_path" => Stud::Temporary.pathname }
+    end
+
+    let(:last_run_time) { '2010-03-19T14:48:40.483Z' }
+
+    before do
+      File.write(settings["last_run_metadata_path"], YAML.dump(last_run_time))
+      test_table = db[:test_table]
+      test_table.insert(:num => 0, :custom_time => Time.now.utc)
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should respect last run metadata" do
+      plugin.run(queue)
+      expect(plugin.instance_variable_get("@value_tracker").value).to be > DateTime.parse(last_run_time).to_time
+    end
+  end
+
+  context "when previous runs are to be respected upon successful query execution (by date/time string)" do
+
+    let(:settings) do
+      { "statement" => "SELECT custom_time FROM test_table WHERE custom_time > :sql_last_value",
+        "use_column_value" => true,
+        "tracking_column" => "custom_time",
+        "tracking_column_type" => "timestamp",
+        "jdbc_default_timezone" => "UTC", #this triggers the last_run_time to be treated as date/time
+        "last_run_metadata_path" => Stud::Temporary.pathname }
+    end
+
+    let(:last_run_time) { '2010-03-19T14:48:40.483Z' }
+
+    before do
+      File.write(settings["last_run_metadata_path"], YAML.dump(last_run_time))
+      test_table = db[:test_table]
+      test_table.insert(:num => 0, :custom_time => Time.now.utc)
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should respect last run metadata" do
+      plugin.run(queue)
+      expect(plugin.instance_variable_get("@value_tracker").value).to be > DateTime.parse(last_run_time)
+    end
+  end
+
   context "when previous runs are to be respected upon successful query execution (by column)" do
 
     let(:settings) do

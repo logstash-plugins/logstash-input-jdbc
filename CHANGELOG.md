@@ -1,3 +1,6 @@
+## 4.3.6
+  - [#274](https://github.com/logstash-plugins/logstash-input-jdbc/issues/274) Fix regression with 4.3.5 that can result in NULL :sql_last_value depending on timestamp format
+  
 ## 4.3.5
   - [#140](https://github.com/logstash-plugins/logstash-input-jdbc/issues/140) Fix long standing bug where setting jdbc_default_timezone loses milliseconds. Force all usage of sql_last_value to be typed according to the settings.
 
