@@ -259,6 +259,8 @@ describe LogStash::Inputs::Jdbc do
       end
 
       plugin.stop
+      runner.join
+      Timecop.return
     end
 
   end
@@ -410,6 +412,7 @@ describe LogStash::Inputs::Jdbc do
         event = queue.pop
         expect(event.get("num")).to eq(12)
         expect(event.get("custom_time").time).to eq(Time.iso8601("2015-01-02T03:21:21.000Z"))
+        Timecop.return
       end
     end
 
