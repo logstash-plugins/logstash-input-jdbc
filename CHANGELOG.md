@@ -1,3 +1,6 @@
+## 4.3.7
+  - [#263](https://github.com/logstash-plugins/logstash-input-jdbc/issues/263) Load the driver with the system class loader. Fixes issue loading some JDBC drivers in Logstash 6.2+ 
+
 ## 4.3.6
   - [#274](https://github.com/logstash-plugins/logstash-input-jdbc/issues/274) Fix regression with 4.3.5 that can result in NULL :sql_last_value depending on timestamp format
   
