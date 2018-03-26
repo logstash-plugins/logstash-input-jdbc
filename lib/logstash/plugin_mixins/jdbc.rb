@@ -135,7 +135,8 @@ module LogStash::PluginMixins::Jdbc
   def load_drivers(drivers)
     drivers.each do |driver|
       begin
-        require driver
+        class_loader = java.lang.ClassLoader.getSystemClassLoader().to_java(java.net.URLClassLoader)
+        class_loader.add_url(java.io.File.new(driver).toURI().toURL())
       rescue => e
         @logger.error("Failed to load #{driver}", :exception => e)
       end
