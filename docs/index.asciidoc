@@ -71,7 +71,7 @@ be used.
 
 Here is an example of setting up the plugin to fetch data from a MySQL database.
 First, we place the appropriate JDBC driver library in our current
-path (this can be placed anywhere on your filesystem). In this example, we connect to
+path (for some vjdbc drivers, put the jar file in /usr/share/logstash/logstash-core/lib/jars/). In this example, we connect to
 the 'mydb' database using the user: 'mysql' and wish to input all rows in the 'songs'
 table that match a specific artist. The following examples demonstrates a possible
 Logstash configuration for this. The `schedule` option in this example will
