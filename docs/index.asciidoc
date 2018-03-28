@@ -100,19 +100,19 @@ option is typically used when the SQL statement is large or cumbersome to supply
 The file option only supports one SQL statement. The plugin will only accept one of the options.
 It cannot read a statement from a file as well as from the `statement` configuration parameter.
 
-==== Configuring multiple SQL statements 
+==== Configuring multiple SQL statements
 
-Configuring multiple SQL statements is useful when there is a need to query and ingest data 
-from different database tables or views. It is possible to define separate Logstash 
-configuration files for each statement or to define multiple statements in a single configuration 
-file. When using multiple statements in a single Logstash configuration file, each statement 
-has to be defined as a separate jdbc input (including jdbc driver, connection string and other 
-required parameters). 
+Configuring multiple SQL statements is useful when there is a need to query and ingest data
+from different database tables or views. It is possible to define separate Logstash
+configuration files for each statement or to define multiple statements in a single configuration
+file. When using multiple statements in a single Logstash configuration file, each statement
+has to be defined as a separate jdbc input (including jdbc driver, connection string and other
+required parameters).
 
-Please note that if any of the statements use the `sql_last_value` parameter (e.g. for 
-ingesting only data changed since last run), each input should define its own 
+Please note that if any of the statements use the `sql_last_value` parameter (e.g. for
+ingesting only data changed since last run), each input should define its own
 `last_run_metadata_path` parameter. Failure to do so will result in undesired behaviour, as
-all inputs will store their state to the same (default) metadata file, effectively 
+all inputs will store their state to the same (default) metadata file, effectively
 overwriting each other's `sql_last_value`.
 
 ==== Predefined Parameters
@@ -185,7 +185,7 @@ input plugins.
 &nbsp;
 
 [id="plugins-{type}s-{plugin}-clean_run"]
-===== `clean_run` 
+===== `clean_run`
 
   * Value type is <<boolean,boolean>>
   * Default value is `false`
@@ -193,12 +193,12 @@ input plugins.
 Whether the previous run state should be preserved
 
 [id="plugins-{type}s-{plugin}-columns_charset"]
-===== `columns_charset` 
+===== `columns_charset`
 
   * Value type is <<hash,hash>>
   * Default value is `{}`
 
-The character encoding for specific columns. This option will override the `:charset` option 
+The character encoding for specific columns. This option will override the `:charset` option
 for the specified columns.
 
 Example:
@@ -215,7 +215,7 @@ input {
 this will only convert column0 that has ISO-8859-1 as an original encoding.
 
 [id="plugins-{type}s-{plugin}-connection_retry_attempts"]
-===== `connection_retry_attempts` 
+===== `connection_retry_attempts`
 
   * Value type is <<number,number>>
   * Default value is `1`
@@ -223,7 +223,7 @@ this will only convert column0 that has ISO-8859-1 as an original encoding.
 Maximum number of times to try connecting to database
 
 [id="plugins-{type}s-{plugin}-connection_retry_attempts_wait_time"]
-===== `connection_retry_attempts_wait_time` 
+===== `connection_retry_attempts_wait_time`
 
   * Value type is <<number,number>>
   * Default value is `0.5`
@@ -231,7 +231,7 @@ Maximum number of times to try connecting to database
 Number of seconds to sleep between connection attempts
 
 [id="plugins-{type}s-{plugin}-jdbc_connection_string"]
-===== `jdbc_connection_string` 
+===== `jdbc_connection_string`
 
   * This is a required setting.
   * Value type is <<string,string>>
@@ -240,7 +240,7 @@ Number of seconds to sleep between connection attempts
 JDBC connection string
 
 [id="plugins-{type}s-{plugin}-jdbc_default_timezone"]
-===== `jdbc_default_timezone` 
+===== `jdbc_default_timezone`
 
   * Value type is <<string,string>>
   * There is no default value for this setting.
@@ -254,7 +254,7 @@ of using the timezone setting of the local machine.  You must use a canonical
 timezone, *America/Denver*, for example.
 
 [id="plugins-{type}s-{plugin}-jdbc_driver_class"]
-===== `jdbc_driver_class` 
+===== `jdbc_driver_class`
 
   * This is a required setting.
   * Value type is <<string,string>>
@@ -265,7 +265,7 @@ NB per https://github.com/logstash-plugins/logstash-input-jdbc/issues/43 if you 
 the Oracle JDBC driver (ojdbc6.jar) the correct `jdbc_driver_class` is `"Java::oracle.jdbc.driver.OracleDriver"`
 
 [id="plugins-{type}s-{plugin}-jdbc_driver_library"]
-===== `jdbc_driver_library` 
+===== `jdbc_driver_library`
 
   * Value type is <<string,string>>
   * There is no default value for this setting.
@@ -280,7 +280,7 @@ required you can pass them separated by a comma.
 If not provided, Plugin will look for the driver class in the Logstash Java classpath.
 
 [id="plugins-{type}s-{plugin}-jdbc_fetch_size"]
-===== `jdbc_fetch_size` 
+===== `jdbc_fetch_size`
 
   * Value type is <<number,number>>
   * There is no default value for this setting.
@@ -288,7 +288,7 @@ If not provided, Plugin will look for the driver class in the Logstash Java clas
 JDBC fetch size. if not provided, respective driver's default will be used
 
 [id="plugins-{type}s-{plugin}-jdbc_page_size"]
-===== `jdbc_page_size` 
+===== `jdbc_page_size`
 
   * Value type is <<number,number>>
   * Default value is `100000`
@@ -296,7 +296,7 @@ JDBC fetch size. if not provided, respective driver's default will be used
 JDBC page size
 
 [id="plugins-{type}s-{plugin}-jdbc_paging_enabled"]
-===== `jdbc_paging_enabled` 
+===== `jdbc_paging_enabled`
 
   * Value type is <<boolean,boolean>>
   * Default value is `false`
@@ -310,7 +310,7 @@ result-set. The limit size is set with `jdbc_page_size`.
 Be aware that ordering is not guaranteed between queries.
 
 [id="plugins-{type}s-{plugin}-jdbc_password"]
-===== `jdbc_password` 
+===== `jdbc_password`
 
   * Value type is <<password,password>>
   * There is no default value for this setting.
@@ -318,7 +318,7 @@ Be aware that ordering is not guaranteed between queries.
 JDBC password
 
 [id="plugins-{type}s-{plugin}-jdbc_password_filepath"]
-===== `jdbc_password_filepath` 
+===== `jdbc_password_filepath`
 
   * Value type is <<path,path>>
   * There is no default value for this setting.
@@ -326,7 +326,7 @@ JDBC password
 JDBC password filename
 
 [id="plugins-{type}s-{plugin}-jdbc_pool_timeout"]
-===== `jdbc_pool_timeout` 
+===== `jdbc_pool_timeout`
 
   * Value type is <<number,number>>
   * Default value is `5`
@@ -335,7 +335,7 @@ Connection pool configuration.
 The amount of seconds to wait to acquire a connection before raising a PoolTimeoutError (default 5)
 
 [id="plugins-{type}s-{plugin}-jdbc_user"]
-===== `jdbc_user` 
+===== `jdbc_user`
 
   * This is a required setting.
   * Value type is <<string,string>>
@@ -344,7 +344,7 @@ The amount of seconds to wait to acquire a connection before raising a PoolTimeo
 JDBC user
 
 [id="plugins-{type}s-{plugin}-jdbc_validate_connection"]
-===== `jdbc_validate_connection` 
+===== `jdbc_validate_connection`
 
   * Value type is <<boolean,boolean>>
   * Default value is `false`
@@ -353,7 +353,7 @@ Connection pool configuration.
 Validate connection before use.
 
 [id="plugins-{type}s-{plugin}-jdbc_validation_timeout"]
-===== `jdbc_validation_timeout` 
+===== `jdbc_validation_timeout`
 
   * Value type is <<number,number>>
   * Default value is `3600`
@@ -362,7 +362,7 @@ Connection pool configuration.
 How often to validate a connection (in seconds)
 
 [id="plugins-{type}s-{plugin}-last_run_metadata_path"]
-===== `last_run_metadata_path` 
+===== `last_run_metadata_path`
 
   * Value type is <<string,string>>
   * Default value is `"/home/ph/.logstash_jdbc_last_run"`
@@ -370,7 +370,7 @@ How often to validate a connection (in seconds)
 Path to file with last run time
 
 [id="plugins-{type}s-{plugin}-lowercase_column_names"]
-===== `lowercase_column_names` 
+===== `lowercase_column_names`
 
   * Value type is <<boolean,boolean>>
   * Default value is `true`
@@ -378,7 +378,7 @@ Path to file with last run time
 Whether to force the lowercasing of identifier fields
 
 [id="plugins-{type}s-{plugin}-parameters"]
-===== `parameters` 
+===== `parameters`
 
   * Value type is <<hash,hash>>
   * Default value is `{}`
@@ -386,15 +386,15 @@ Whether to force the lowercasing of identifier fields
 Hash of query parameter, for example `{ "target_id" => "321" }`
 
 [id="plugins-{type}s-{plugin}-record_last_run"]
-===== `record_last_run` 
+===== `record_last_run`
 
   * Value type is <<boolean,boolean>>
   * Default value is `true`
 
-Whether to save state or not in last_run_metadata_path
+Whether to save state or not in <<plugins-{type}s-{plugin}-last_run_metadata_path>>
 
 [id="plugins-{type}s-{plugin}-schedule"]
-===== `schedule` 
+===== `schedule`
 
   * Value type is <<string,string>>
   * There is no default value for this setting.
@@ -406,7 +406,7 @@ There is no schedule by default. If no schedule is given, then the statement is 
 exactly once.
 
 [id="plugins-{type}s-{plugin}-sequel_opts"]
-===== `sequel_opts` 
+===== `sequel_opts`
 
   * Value type is <<hash,hash>>
   * Default value is `{}`
@@ -420,7 +420,7 @@ examples of vendor-specific options can be found in this
 documentation page: https://github.com/jeremyevans/sequel/blob/master/doc/opening_databases.rdoc
 
 [id="plugins-{type}s-{plugin}-sql_log_level"]
-===== `sql_log_level` 
+===== `sql_log_level`
 
   * Value can be any of: `fatal`, `error`, `warn`, `info`, `debug`
   * Default value is `"info"`
@@ -429,7 +429,7 @@ Log level at which to log SQL queries, the accepted values are the common ones f
 info and debug. The default value is info.
 
 [id="plugins-{type}s-{plugin}-statement"]
-===== `statement` 
+===== `statement`
 
   * Value type is <<string,string>>
   * There is no default value for this setting.
@@ -449,7 +449,7 @@ here, ":target_id" is a named parameter. You can configure named parameters
 with the `parameters` setting.
 
 [id="plugins-{type}s-{plugin}-statement_filepath"]
-===== `statement_filepath` 
+===== `statement_filepath`
 
   * Value type is <<path,path>>
   * There is no default value for this setting.
@@ -457,15 +457,15 @@ with the `parameters` setting.
 Path of file containing statement to execute
 
 [id="plugins-{type}s-{plugin}-tracking_column"]
-===== `tracking_column` 
+===== `tracking_column`
 
   * Value type is <<string,string>>
   * There is no default value for this setting.
 
-If tracking column value rather than timestamp, the column whose value is to be tracked
+The column whose value is to be tracked if `use_column_value` is set to `true`
 
 [id="plugins-{type}s-{plugin}-tracking_column_type"]
-===== `tracking_column_type` 
+===== `tracking_column_type`
 
   * Value can be any of: `numeric`, `timestamp`
   * Default value is `"numeric"`
@@ -473,13 +473,14 @@ If tracking column value rather than timestamp, the column whose value is to be 
 Type of tracking column. Currently only "numeric" and "timestamp"
 
 [id="plugins-{type}s-{plugin}-use_column_value"]
-===== `use_column_value` 
+===== `use_column_value`
 
   * Value type is <<boolean,boolean>>
   * Default value is `false`
 
-Use an incremental column value rather than a timestamp
-
+When set to `true`, uses the defined
+<<plugins-{type}s-{plugin}-tracking_column>> value as the `:sql_last_value`. When set
+to `false`, `:sql_last_value` reflects the last time the query was executed.
 
 
 [id="plugins-{type}s-{plugin}-common-options"]
