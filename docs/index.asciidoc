@@ -1,5 +1,6 @@
 :plugin: jdbc
 :type: input
+:default_codec: plain
 
 ///////////////////////////////////////////
 START - GENERATED VARIABLES, DO NOT EDIT!
@@ -485,3 +486,5 @@ to `false`, `:sql_last_value` reflects the last time the query was executed.
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
+
+:default_codec!:
