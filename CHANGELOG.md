@@ -1,3 +1,6 @@
+## 4.3.9
+  - Docs: Set the default_codec doc attribute.
+
 ## 4.3.8
   - [#273](https://github.com/logstash-plugins/logstash-input-jdbc/issues/273) Clarify use of use_column_value. Make last_run_metadata_path reference in record_last_run entry clickable.
 
