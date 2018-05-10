@@ -2,8 +2,8 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/jdbc"
 require "jdbc/derby"
-require "jdbc/mysql"
-Jdbc::MySQL.load_driver
+require "jdbc/mariadb"
+Jdbc::MariaDB.load_driver
 require "sequel"
 require "sequel/adapters/jdbc"
 require "timecop"
@@ -99,8 +99,8 @@ describe LogStash::Inputs::Jdbc do
   context "when connecting to a non-existent server", :no_connection => true do
     let(:mixin_settings) do
       super.merge(
-        "jdbc_driver_class" => "com.mysql.jdbc.Driver",
-        "jdbc_connection_string" => "jdbc:mysql://localhost:99999/somedb"
+        "jdbc_driver_class" => "org.mariadb.jdbc.Driver",
+        "jdbc_connection_string" => "jdbc:mariadb://localhost:99999/somedb"
       )
     end
     let(:settings) { super.merge("statement" => "SELECT 1 as col1 FROM test_table", "jdbc_user" => "foo", "jdbc_password" => "bar") }
