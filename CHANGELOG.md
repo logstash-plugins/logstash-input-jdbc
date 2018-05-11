@@ -1,3 +1,6 @@
+## 4.3.10
+  - [#284](https://github.com/logstash-plugins/logstash-input-jdbc/pull/284) Swap out mysql for postgresql for testing
+
 ## 4.3.9
   - Docs: Set the default_codec doc attribute.
 
