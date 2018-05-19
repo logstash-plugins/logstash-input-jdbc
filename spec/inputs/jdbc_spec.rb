@@ -184,6 +184,75 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when passing post_statement" do
+    let(:settings) do
+      {
+        "statement" => "SELECT * FROM test"
+      }
+    end
+
+    before do
+      db.create_table(:test) do
+        Integer(:id)
+        Integer(:flag)
+      end
+      db[:test].insert(:id => 42, :flag => 0)
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+      db.drop_table(:test)
+    end
+
+    it "should update records from table" do
+      plugin.post_statement = "UPDATE test SET flag = 1 WHERE id = :id"
+      plugin.run(queue)
+      expect(queue.pop.get('id')).to eq(42)
+
+      resultset = db[:test].all
+	  expect(resultset.count).to eq(1)
+      resultset.each do |row|
+        expect(row[:id]).to eq(42)
+        expect(row[:flag]).to eq(1)
+      end
+    end
+
+
+    it "should delete records from table" do
+      plugin.post_statement = "DELETE FROM test WHERE id = :id"
+      plugin.run(queue)
+      expect(queue.pop.get('id')).to eq(42)
+
+      resultset = db[:test].all
+	  expect(resultset.count).to eq(0)
+    end
+  end
+
+  context "when post_statement is passed in from a file" do
+    let(:post_statement) { "UPDATE dummy_table SET flag = 1 WHERE num = :num" }
+    let(:post_statement_filepath) { Stud::Temporary.pathname }
+    let(:settings) do 
+      {
+        "post_statement_filepath" => post_statement_filepath,
+        "statement" => "SELECT * from dummy_table"
+      }
+    end
+
+    before do
+      File.write(post_statement_filepath, post_statement)
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should read in post_statement from file" do
+      expect(plugin.post_statement).to eq(post_statement)
+    end
+  end
+
   context "when passing parameters" do
     let(:settings) do
       {

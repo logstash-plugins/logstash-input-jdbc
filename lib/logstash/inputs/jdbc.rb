@@ -147,6 +147,13 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
   # Path of file containing statement to execute
   config :statement_filepath, :validate => :path
 
+  # Statement to be executed after reading each record found. You can use values
+  # from  `parameters`, plus the values from the record
+  config :post_statement, :validate => :string, :default => nil
+
+  # Path of file containing statement to be executed after reading each record found
+  config :post_statement_filepath, :validate => :path
+
   # Hash of query parameter, for example `{ "target_id" => "321" }`
   config :parameters, :validate => :hash, :default => {}
 
@@ -222,6 +229,7 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     end
 
     @statement = File.read(@statement_filepath) if @statement_filepath
+    @post_statement = File.read(@post_statement_filepath) if @post_statement_filepath
 
     if (@jdbc_password_filepath and @jdbc_password)
       raise(LogStash::ConfigurationError, "Only one of :jdbc_password, :jdbc_password_filepath may be set at a time.")
@@ -269,6 +277,13 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       event = LogStash::Event.new(row)
       decorate(event)
       queue << event
+      run_post_statement(row)
+    end
+  end
+
+  def run_post_statement(row)
+    unless @post_statement.nil?
+      execute_update_statement(@post_statement, @parameters.merge(row))
     end
     @value_tracker.write
   end
