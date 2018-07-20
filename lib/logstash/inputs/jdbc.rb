@@ -230,11 +230,14 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
     @jdbc_password = LogStash::Util::Password.new(File.read(@jdbc_password_filepath).strip) if @jdbc_password_filepath
 
     if enable_encoding?
-      @converters = {}
-      @columns_charset.each do |column_name, encoding|
-        @converters[encoding] = LogStash::Util::Charset.new(encoding)
+      encodings = @columns_charset.values
+      encodings << @charset if @charset
+
+      @converters = encodings.each_with_object({}) do |encoding, converters|
+        converter = LogStash::Util::Charset.new(encoding)
+        converter.logger = self.logger
+        converters[encoding] = converter
       end
-      @converters[@charset] = LogStash::Util::Charset.new(@charset) if @charset
     end
   end # def register
 
