@@ -1,3 +1,18 @@
+## 4.3.10
+  - [#284](https://github.com/logstash-plugins/logstash-input-jdbc/pull/284) Swap out mysql for postgresql for testing
+
+## 4.3.9
+  - Docs: Set the default_codec doc attribute.
+
+## 4.3.8
+  - [#273](https://github.com/logstash-plugins/logstash-input-jdbc/issues/273) Clarify use of use_column_value. Make last_run_metadata_path reference in record_last_run entry clickable.
+
+## 4.3.7
+  - [#263](https://github.com/logstash-plugins/logstash-input-jdbc/issues/263) Load the driver with the system class loader. Fixes issue loading some JDBC drivers in Logstash 6.2+
+
+## 4.3.6
+  - [#274](https://github.com/logstash-plugins/logstash-input-jdbc/issues/274) Fix regression with 4.3.5 that can result in NULL :sql_last_value depending on timestamp format
+
 ## 4.3.5
   - [#140](https://github.com/logstash-plugins/logstash-input-jdbc/issues/140) Fix long standing bug where setting jdbc_default_timezone loses milliseconds. Force all usage of sql_last_value to be typed according to the settings.
 

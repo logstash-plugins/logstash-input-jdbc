@@ -2,8 +2,8 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/jdbc"
 require "jdbc/derby"
-require "jdbc/mysql"
-Jdbc::MySQL.load_driver
+require 'jdbc/postgres'
+Jdbc::Postgres.load_driver
 require "sequel"
 require "sequel/adapters/jdbc"
 require "timecop"
@@ -99,8 +99,8 @@ describe LogStash::Inputs::Jdbc do
   context "when connecting to a non-existent server", :no_connection => true do
     let(:mixin_settings) do
       super.merge(
-        "jdbc_driver_class" => "com.mysql.jdbc.Driver",
-        "jdbc_connection_string" => "jdbc:mysql://localhost:99999/somedb"
+        "jdbc_driver_class" => "org.postgresql.Driver",
+        "jdbc_connection_string" => "jdbc:postgresql://localhost:65000/somedb"
       )
     end
     let(:settings) { super.merge("statement" => "SELECT 1 as col1 FROM test_table", "jdbc_user" => "foo", "jdbc_password" => "bar") }
@@ -259,6 +259,8 @@ describe LogStash::Inputs::Jdbc do
       end
 
       plugin.stop
+      runner.join
+      Timecop.return
     end
 
   end
@@ -736,6 +738,65 @@ describe LogStash::Inputs::Jdbc do
       plugin.run(queue)
 
       expect(plugin.instance_variable_get("@value_tracker").value).to be > last_run_time
+    end
+  end
+
+  context "when previous runs are to be respected upon successful query execution (by time string)" do
+
+    let(:settings) do
+      { "statement" => "SELECT custom_time FROM test_table WHERE custom_time > :sql_last_value",
+        "use_column_value" => true,
+        "tracking_column" => "custom_time",
+        "tracking_column_type" => "timestamp",
+        "last_run_metadata_path" => Stud::Temporary.pathname }
+    end
+
+    let(:last_run_time) { '2010-03-19T14:48:40.483Z' }
+
+    before do
+      File.write(settings["last_run_metadata_path"], YAML.dump(last_run_time))
+      test_table = db[:test_table]
+      test_table.insert(:num => 0, :custom_time => Time.now.utc)
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should respect last run metadata" do
+      plugin.run(queue)
+      expect(plugin.instance_variable_get("@value_tracker").value).to be > DateTime.parse(last_run_time).to_time
+    end
+  end
+
+  context "when previous runs are to be respected upon successful query execution (by date/time string)" do
+
+    let(:settings) do
+      { "statement" => "SELECT custom_time FROM test_table WHERE custom_time > :sql_last_value",
+        "use_column_value" => true,
+        "tracking_column" => "custom_time",
+        "tracking_column_type" => "timestamp",
+        "jdbc_default_timezone" => "UTC", #this triggers the last_run_time to be treated as date/time
+        "last_run_metadata_path" => Stud::Temporary.pathname }
+    end
+
+    let(:last_run_time) { '2010-03-19T14:48:40.483Z' }
+
+    before do
+      File.write(settings["last_run_metadata_path"], YAML.dump(last_run_time))
+      test_table = db[:test_table]
+      test_table.insert(:num => 0, :custom_time => Time.now.utc)
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should respect last run metadata" do
+      plugin.run(queue)
+      expect(plugin.instance_variable_get("@value_tracker").value).to be > DateTime.parse(last_run_time)
     end
   end
 
