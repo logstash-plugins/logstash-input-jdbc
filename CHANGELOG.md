@@ -1,3 +1,6 @@
+## 4.3.11
+  - Fixed crash that occurs when receiving string input that cannot be coerced to UTF-8 (such as BLOB data) [#291](https://github.com/logstash-plugins/logstash-input-jdbc/pull/291)
+
 ## 4.3.10
   - [#284](https://github.com/logstash-plugins/logstash-input-jdbc/pull/284) Swap out mysql for postgresql for testing
 
