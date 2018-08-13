@@ -1267,4 +1267,40 @@ describe LogStash::Inputs::Jdbc do
       expect(event.get("ranking").to_f).to eq(95.67)
     end
   end
+
+  context "when debug logging and count query raises an error" do
+    let(:settings) do
+      { "statement" => "SELECT * from types_table" }
+    end
+    let(:logger) { double("logger", :debug? => true) }
+    let(:statement_logger) { LogStash::PluginMixins::CheckedCountLogger.new(logger) }
+    let(:value_tracker) { double("value tracker", :set_value => nil, :write => nil) }
+
+    before do
+      db << "INSERT INTO types_table (num, string, started_at, custom_time, ranking) VALUES (1, 'A test', '1999-12-31', '1999-12-31 23:59:59', 95.67)"
+      plugin.register
+      plugin.set_statement_logger(statement_logger)
+      plugin.set_value_tracker(value_tracker)
+      allow(value_tracker).to receive(:value).and_return("bar")
+      allow(statement_logger).to receive(:execute_count).once.and_raise(StandardError.new("foo"))
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "should not log a debug line with a count key" do
+      expect(logger).to receive(:info).once.with("Disabling count queries as the executing the count SQL raised an error")
+      expect(logger).to receive(:debug).once.with("Executing JDBC query", :statement => settings["statement"], :parameters => {:sql_last_value=>"bar"})
+      plugin.run(queue)
+      event = queue.pop
+      expect(event.get("num")).to eq(1)
+      expect(event.get("string")).to eq("A test")
+      expect(event.get("started_at")).to be_a(LogStash::Timestamp)
+      expect(event.get("started_at").to_s).to eq("1999-12-31T00:00:00.000Z")
+      expect(event.get("custom_time")).to be_a(LogStash::Timestamp)
+      expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59.000Z")
+      expect(event.get("ranking").to_f).to eq(95.67)
+    end
+  end
 end

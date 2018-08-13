@@ -4,6 +4,7 @@ require "logstash/config/mixin"
 require "time"
 require "date"
 require "logstash/plugin_mixins/value_tracking"
+require "logstash/plugin_mixins/checked_count_logger"
 
 java_import java.util.concurrent.locks.ReentrantLock
 
@@ -219,13 +220,12 @@ module LogStash::PluginMixins::Jdbc
       @connection_lock.lock
       open_jdbc_connection
       begin
-        parameters = symbolized_params(parameters)
-        query = @database[statement, parameters]
+        params = symbolized_params(parameters)
+        query = @database[statement, params]
 
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
-        @logger.debug? and @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => query.count)
-
+        @statement_logger.log_statement_parameters(query, statement, params)
         perform_query(query) do |row|
           sql_last_value = get_column_value(row) if @use_column_value
           yield extract_values_from(row)

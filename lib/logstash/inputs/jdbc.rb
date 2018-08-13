@@ -213,7 +213,8 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       end
     end
 
-    @value_tracker = LogStash::PluginMixins::ValueTracking.build_last_value_tracker(self)
+    set_value_tracker(LogStash::PluginMixins::ValueTracking.build_last_value_tracker(self))
+    set_statement_logger(LogStash::PluginMixins::CheckedCountLogger.new(@logger))
 
     @enable_encoding = !@charset.nil? || !@columns_charset.empty?
 
@@ -240,6 +241,15 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       end
     end
   end # def register
+
+  # test injection points
+  def set_statement_logger(instance)
+    @statement_logger = instance
+  end
+
+  def set_value_tracker(instance)
+    @value_tracker = instance
+  end
 
   def run(queue)
     if @schedule
