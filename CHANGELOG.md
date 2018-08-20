@@ -1,3 +1,6 @@
+## 4.3.12
+  - Added check to prevent count sql syntax errors when debug logging [Issue #287](https://github.com/logstash-plugins/logstash-input-jdbc/issue/287) and [Pull Request #294](https://github.com/logstash-plugins/logstash-input-jdbc/pull/294)
+
 ## 4.3.11
   - Fixed crash that occurs when receiving string input that cannot be coerced to UTF-8 (such as BLOB data) [#291](https://github.com/logstash-plugins/logstash-input-jdbc/pull/291)
 
