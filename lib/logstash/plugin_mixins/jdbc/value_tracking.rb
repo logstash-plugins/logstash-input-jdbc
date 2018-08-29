@@ -1,7 +1,7 @@
 # encoding: utf-8
 require "yaml" # persistence
 
-module LogStash module PluginMixins
+module LogStash module PluginMixins module Jdbc
   class ValueTracking
 
     def self.build_last_value_tracker(plugin)
@@ -125,4 +125,4 @@ module LogStash module PluginMixins
     def write(value)
     end
   end
-end end
+end end end
