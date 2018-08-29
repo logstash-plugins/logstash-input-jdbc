@@ -1,7 +1,7 @@
 # encoding: utf-8
 require "logstash/inputs/base"
 require "logstash/namespace"
-require "logstash/plugin_mixins/jdbc"
+require "logstash/plugin_mixins/jdbc/jdbc"
 
 
 # This plugin was created as a way to ingest data from any database
@@ -123,8 +123,8 @@ require "logstash/plugin_mixins/jdbc"
 # }
 # ---------------------------------------------------------------------------------------------------
 #
-class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
-  include LogStash::PluginMixins::Jdbc
+module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
+  include LogStash::PluginMixins::Jdbc::Jdbc
   config_name "jdbc"
 
   # If undefined, Logstash will complain, even if codec is unused.
@@ -213,7 +213,8 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       end
     end
 
-    @value_tracker = LogStash::PluginMixins::ValueTracking.build_last_value_tracker(self)
+    set_value_tracker(LogStash::PluginMixins::Jdbc::ValueTracking.build_last_value_tracker(self))
+    set_statement_logger(LogStash::PluginMixins::Jdbc::CheckedCountLogger.new(@logger))
 
     @enable_encoding = !@charset.nil? || !@columns_charset.empty?
 
@@ -221,13 +222,13 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       raise(LogStash::ConfigurationError, "Must set either :statement or :statement_filepath. Only one may be set at a time.")
     end
 
-    @statement = File.read(@statement_filepath) if @statement_filepath
+    @statement = ::File.read(@statement_filepath) if @statement_filepath
 
     if (@jdbc_password_filepath and @jdbc_password)
       raise(LogStash::ConfigurationError, "Only one of :jdbc_password, :jdbc_password_filepath may be set at a time.")
     end
 
-    @jdbc_password = LogStash::Util::Password.new(File.read(@jdbc_password_filepath).strip) if @jdbc_password_filepath
+    @jdbc_password = LogStash::Util::Password.new(::File.read(@jdbc_password_filepath).strip) if @jdbc_password_filepath
 
     if enable_encoding?
       encodings = @columns_charset.values
@@ -240,6 +241,15 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       end
     end
   end # def register
+
+  # test injection points
+  def set_statement_logger(instance)
+    @statement_logger = instance
+  end
+
+  def set_value_tracker(instance)
+    @value_tracker = instance
+  end
 
   def run(queue)
     if @schedule
@@ -296,4 +306,4 @@ class LogStash::Inputs::Jdbc < LogStash::Inputs::Base
       value
     end
   end
-end # class LogStash::Inputs::Jdbc
+end end end # class LogStash::Inputs::Jdbc
