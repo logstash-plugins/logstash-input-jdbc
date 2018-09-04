@@ -1,3 +1,6 @@
+## 4.3.13
+  - Changed documentation to generalize the PATH location [#297](https://github.com/logstash-plugins/logstash-input-jdbc/pull/297)
+
 ## 4.3.12
   - Added check to prevent count sql syntax errors when debug logging [Issue #287](https://github.com/logstash-plugins/logstash-input-jdbc/issue/287) and [Pull Request #294](https://github.com/logstash-plugins/logstash-input-jdbc/pull/294)
 
