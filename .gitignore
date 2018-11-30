@@ -3,4 +3,3 @@ Gemfile.lock
 .bundle
 vendor
 derby.log
-.idea
