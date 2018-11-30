@@ -54,7 +54,7 @@ module LogStash module PluginMixins module Jdbc
     def read_value
       @val = @node_handler.read
       return 0 if @val.nil?
-      @val.to_i
+      @val.to_f.round(0)
     end
 
     def set_value(value)
