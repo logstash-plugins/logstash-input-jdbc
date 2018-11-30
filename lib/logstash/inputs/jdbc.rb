@@ -157,8 +157,20 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   # exactly once.
   config :schedule, :validate => :string
 
+  # last run time storage ('file', 'zookeeper')
+  config :last_run_storage, :validate => :string, :default => "file"
+
   # Path to file with last run time
   config :last_run_metadata_path, :validate => :string, :default => "#{ENV['HOME']}/.logstash_jdbc_last_run"
+
+  # Path to zookeeper node with last run time
+  config :last_run_zookeeper_path, :validate => :string, :default => "/logstash_input_jdbc_last_run"
+
+  # Zookeeper ip list
+  config :zk_ip_list, :validate => :string, :default => "localhost:2181"
+
+  # Znode we created is permanent or ephemeral.
+  config :zk_ephemeral, :validate => :boolean, :default => false
 
   # Use an incremental column value rather than a timestamp
   config :use_column_value, :validate => :boolean, :default => false
@@ -213,7 +225,8 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
       end
     end
 
-    set_value_tracker(LogStash::PluginMixins::Jdbc::ValueTracking.build_last_value_tracker(self))
+    init_value_tracker
+
     set_statement_logger(LogStash::PluginMixins::Jdbc::CheckedCountLogger.new(@logger))
 
     @enable_encoding = !@charset.nil? || !@columns_charset.empty?
@@ -241,6 +254,16 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
       end
     end
   end # def register
+
+  def init_value_tracker
+    if @last_run_storage.downcase == "file"
+      set_value_tracker(LogStash::PluginMixins::Jdbc::ValueTracking.build_last_value_tracker(self))
+    else
+      if @last_run_storage.downcase == "zookeeper"
+        set_value_tracker(LogStash::PluginMixins::Jdbc::ValueTrackingZookeeper.build_last_value_tracker(self))
+      end
+    end
+  end
 
   # test injection points
   def set_statement_logger(instance)
@@ -273,7 +296,13 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
   def execute_query(queue)
     # update default parameters
-    @parameters['sql_last_value'] = @value_tracker.value
+    if @last_run_storage.downcase == "file"
+      @parameters['sql_last_value'] = @value_tracker.value
+    else
+      if @last_run_storage.downcase == "zookeeper"
+        @parameters['sql_last_value'] = @value_tracker.read_value
+      end
+    end
     execute_statement(@statement, @parameters) do |row|
       if enable_encoding?
         ## do the necessary conversions to string elements
@@ -283,7 +312,13 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
       decorate(event)
       queue << event
     end
-    @value_tracker.write
+    begin
+      # save value if it's not the same as previous
+      @value_tracker.write if @parameters['sql_last_value'] != @value_tracker.value
+    rescue => e
+      @logger.error("Failed to write last value", :exception => e)
+      stop
+    end
   end
 
   private

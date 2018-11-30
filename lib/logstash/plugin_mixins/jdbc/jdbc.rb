@@ -4,6 +4,7 @@ require "logstash/config/mixin"
 require "time"
 require "date"
 require_relative "value_tracking"
+require_relative "value_tracking_zookeeper"
 require_relative "checked_count_logger"
 
 java_import java.util.concurrent.locks.ReentrantLock
