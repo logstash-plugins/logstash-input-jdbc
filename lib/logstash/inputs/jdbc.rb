@@ -303,6 +303,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         @parameters['sql_last_value'] = @value_tracker.read_value
       end
     end
+    @event_sent = false
     execute_statement(@statement, @parameters) do |row|
       if enable_encoding?
         ## do the necessary conversions to string elements
@@ -311,10 +312,11 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
       event = LogStash::Event.new(row)
       decorate(event)
       queue << event
+      @event_sent = true
     end
     begin
       # save value if it's not the same as previous
-      @value_tracker.write if @parameters['sql_last_value'] != @value_tracker.value
+      @value_tracker.write if @parameters['sql_last_value'] != @value_tracker.value && @event_sent
     rescue => e
       @logger.error("Failed to write last value", :exception => e)
       stop
