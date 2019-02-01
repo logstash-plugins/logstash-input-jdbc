@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "logstash-core-plugin-api", ">= 1.60", "<= 2.99"
   s.add_runtime_dependency 'logstash-codec-plain'
   s.add_runtime_dependency 'sequel'
-  s.add_runtime_dependency 'tzinfo'
+  s.add_runtime_dependency 'tzinfo', '< 2.0.0'
   s.add_runtime_dependency 'tzinfo-data'
   s.add_runtime_dependency 'rufus-scheduler'
 
