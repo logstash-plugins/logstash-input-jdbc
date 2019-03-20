@@ -251,11 +251,17 @@ module LogStash  module PluginMixins module Jdbc
         query.each_page(@jdbc_page_size) do |paged_dataset|
           paged_dataset.each do |row|
             yield row
+            # Stop processing rows if the input should be stopped
+            break if stop?
           end
+          # Stop reading datasets if the input should be stopped
+          break if stop?
         end
       else
         query.each do |row|
           yield row
+          # Stop reading rows if the input should be stopped
+          break if stop?
         end
       end
     end
@@ -313,5 +319,4 @@ module LogStash  module PluginMixins module Jdbc
 
   end
 end end end
-
 
