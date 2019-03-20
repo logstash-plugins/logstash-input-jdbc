@@ -232,7 +232,11 @@ module LogStash::PluginMixins::Jdbc
               sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
             end
             yield extract_values_from(row)
+            # Stop processing rows if the input should be stopped
+            break if stop?
           end
+          # Stop reading datasets if the input should be stopped
+          break if stop?
         end
       else
         query.each do |row|
@@ -241,7 +245,11 @@ module LogStash::PluginMixins::Jdbc
             sql_last_value=Time.parse(sql_last_value.to_s) # Coerce the timestamp to a `Time`
           end
           yield extract_values_from(row)
+          # Stop processing rows if the input should be stopped
+          break if stop?
         end
+        # Stop reading datasets if the input should be stopped
+        break if stop?
       end
       success = true
     rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError => e
