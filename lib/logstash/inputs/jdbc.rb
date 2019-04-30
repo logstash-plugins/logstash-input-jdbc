@@ -203,6 +203,12 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
   attr_reader :database # for test mocking/stubbing
 
+  config :use_prepared_statements, :validate => :boolean, :default => false
+
+  config :prepared_statement_name, :validate => :string, :default => SecureRandom.hex(40)
+
+  config :prepared_statement_bind_values, :validate => :array, :default => []
+
   public
 
   def register
@@ -244,6 +250,8 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         converters[encoding] = converter
       end
     end
+
+    @statement_handler = LogStash::PluginMixins::Jdbc::StatementHandler.build_statement_handler(self)
   end # def register
 
   # test injection points
@@ -277,8 +285,9 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
   def execute_query(queue)
     # update default parameters
-    @parameters['sql_last_value'] = @value_tracker.value
-    execute_statement(@statement, @parameters) do |row|
+    # @parameters['sql_last_value'] = @value_tracker.value
+    # execute_statement(@statement, @parameters) do |row|
+    execute_statement do |row|
       if enable_encoding?
         ## do the necessary conversions to string elements
         row = Hash[row.map { |k, v| [k.to_s, convert(k, v)] }]

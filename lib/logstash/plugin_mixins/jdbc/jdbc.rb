@@ -6,6 +6,7 @@ require "date"
 require_relative "value_tracking"
 require_relative "checked_count_logger"
 require_relative "wrapped_driver"
+require_relative "statement_handler"
 
 java_import java.util.concurrent.locks.ReentrantLock
 
@@ -246,14 +247,12 @@ module LogStash  module PluginMixins module Jdbc
     end
 
     public
-    def execute_statement(statement, parameters)
-      # sql_last_value has been set in params by caller
+    def execute_statement
       success = false
       @connection_lock.lock
       open_jdbc_connection
       begin
-        params = symbolized_params(parameters)
-        query = @database[statement, params]
+        query = @statement_handler.build_query(@database, @value_tracker.value)
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
         @statement_logger.log_statement_parameters(query, statement, params)
@@ -303,20 +302,6 @@ module LogStash  module PluginMixins module Jdbc
       else
         # Otherwise send the updated tracking column
         row[@tracking_column.to_sym]
-      end
-    end
-
-# Symbolize parameters keys to use with Sequel
-    private
-    def symbolized_params(parameters)
-      parameters.inject({}) do |hash,(k,v)|
-        case v
-        when LogStash::Timestamp
-          hash[k.to_sym] = v.time
-        else
-          hash[k.to_sym] = v
-        end
-        hash
       end
     end
 
