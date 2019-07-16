@@ -99,6 +99,8 @@ module LogStash  module PluginMixins module Jdbc
       config :connection_retry_attempts, :validate => :number, :default => 1
       # Number of seconds to sleep between connection attempts
       config :connection_retry_attempts_wait_time, :validate => :number, :default => 0.5
+
+      config :application_timezone, :validate => ["local", "utc"], :default => "local"
     end
 
     private
@@ -166,6 +168,8 @@ module LogStash  module PluginMixins module Jdbc
       require "java"
       require "sequel"
       require "sequel/adapters/jdbc"
+
+      Sequel.application_timezone = @application_timezone.to_sym
 
       begin
         load_drivers
@@ -247,7 +251,6 @@ module LogStash  module PluginMixins module Jdbc
         params = symbolized_params(parameters)
         query = @database[statement, params]
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
-        STDERR.puts ".....1", sql_last_value.inspect, "......"
         @tracking_column_warning_sent = false
         @statement_logger.log_statement_parameters(query, statement, params)
         perform_query(query) do |row|
@@ -258,7 +261,6 @@ module LogStash  module PluginMixins module Jdbc
       rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError, Java::JavaSql::SQLException => e
         @logger.warn("Exception when executing JDBC query", :exception => e)
       else
-        STDERR.puts ".....2", sql_last_value.inspect, "......"
         @value_tracker.set_value(sql_last_value)
       ensure
         close_jdbc_connection
@@ -322,22 +324,16 @@ module LogStash  module PluginMixins module Jdbc
 
     private
     def decorate_value(value)
-      STDERR.puts ".....a", value.inspect, value.class, "......"
-      if value.is_a?(Time)
+      case value
+      when Time
         # transform it to LogStash::Timestamp as required by LS
         LogStash::Timestamp.new(value)
-      elsif value.is_a?(Date)
-        LogStash::Timestamp.new(value.to_time)
-      elsif value.is_a?(DateTime)
-        # Manual timezone conversion detected.
-        # This is slower, so we put it in as a conditional case.
-        # LogStash::Timestamp.new(Time.parse(value.to_s))
+      when Date, DateTime
         LogStash::Timestamp.new(value.to_time)
       else
         value
       end
     end
-
   end
 end end end
 

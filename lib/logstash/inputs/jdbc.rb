@@ -2,7 +2,7 @@
 require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc/jdbc"
-
+require_relative "tzinfo_jruby_patch"
 
 # This plugin was created as a way to ingest data from any database
 # with a JDBC interface into Logstash. You can periodically schedule ingestion

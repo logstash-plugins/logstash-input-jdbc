@@ -11,14 +11,13 @@ require "stud/temporary"
 require "time"
 require "date"
 
-describe LogStash::Inputs::Jdbc do
-  # This is a necessary change test-wide to guarantee that no local timezone
-  # is picked up.  It could be arbitrarily set to any timezone, but then the test
-  # would have to compensate differently.  That's why UTC is chosen.
-  before(:suite) do
-    ENV["TZ"] = "Etc/UTC"
-  end
+# This is a necessary change test-wide to guarantee that no local timezone
+# is picked up. It could be arbitrarily set to any timezone, but then the test
+# would have to compensate differently.  That's why UTC is chosen.
+# Java 9+ or Jruby 9.2+ needs to see this env var - setting it here is not enough.
+raise "These tests need to be run in the UTC timezone, set TZ=UTC before invoking rspec" if ENV["TZ"] !~ /UTC\z/
 
+describe LogStash::Inputs::Jdbc do
   let(:mixin_settings) do
     { "jdbc_user" => ENV['USER'], "jdbc_driver_class" => "org.apache.derby.jdbc.EmbeddedDriver",
       "jdbc_connection_string" => "jdbc:derby:memory:testdb;create=true"}
@@ -66,22 +65,6 @@ describe LogStash::Inputs::Jdbc do
       expect { plugin.register }.to_not raise_error
       plugin.stop
     end
-
-    # it "should load all drivers when passing an array" do
-    #   mixin_settings['jdbc_driver_library'] = '/foo/bar,/bar/foo'
-    #   expect(plugin).to receive(:load_drivers).with(['/foo/bar', '/bar/foo'])
-    #   plugin.register
-    #   plugin.run(queue) # load when first run
-    #   plugin.stop
-    # end
-
-    # it "should load all drivers when using a single value" do
-    #   mixin_settings['jdbc_driver_library'] = '/foo/bar'
-    #   expect(plugin).to receive(:load_drivers).with(['/foo/bar'])
-    #   plugin.register
-    #   plugin.run(queue) # load when first run
-    #   plugin.stop
-    # end
 
     it "should stop without raising exception" do
       plugin.register
@@ -374,17 +357,18 @@ describe LogStash::Inputs::Jdbc do
         }
       end
 
-      it "should convert the time to reflect the timezone " do
+      before do
         last_run_value = DateTime.iso8601("2000-01-01T12:00:00.000Z")
-        File.write(settings["last_run_metadata_path"], YAML.dump(last_run_value))
-
-        Timecop.travel(DateTime.iso8601("2015-01-01T15:50:00.000Z")) do
+        File.write(settings["last_run_metadata_path"], last_run_value)
+        Timecop.travel(DateTime.iso8601("2015-01-01T15:50:01.000Z")) do
           # simulate earlier records written
           hours.each do |i|
             db[:test_table].insert(:num => i, :custom_time => "2015-01-01 #{i}:00:00", :created_at => Time.now.utc)
           end
         end
+      end
 
+      it "should convert the time to reflect the timezone " do
         Timecop.travel(DateTime.iso8601("2015-01-02T02:10:00.000Z")) do
           # simulate the first plugin run after the custom time of the last record
           plugin.register
@@ -396,6 +380,7 @@ describe LogStash::Inputs::Jdbc do
         end
         Timecop.travel(DateTime.iso8601("2015-01-02T02:20:00.000Z")) do
           # simulate a run 10 minutes later
+          plugin.register
           plugin.run(queue)
           expect(queue.size).to eq(0) # no new records
           plugin.stop
@@ -405,6 +390,7 @@ describe LogStash::Inputs::Jdbc do
         end
         Timecop.travel(DateTime.iso8601("2015-01-02T03:30:00.000Z")) do
           # simulate another run later than the custom time of the last record
+          plugin.register
           plugin.run(queue)
           expect(queue.size).to eq(2)
           plugin.stop
@@ -450,7 +436,6 @@ describe LogStash::Inputs::Jdbc do
         raw_last_run_value = File.read(settings["last_run_metadata_path"])
         last_run_value = YAML.load(raw_last_run_value)
         expect(last_run_value).to be_a(DateTime)
-        STDERR.puts "-----", last_run_value.inspect, raw_last_run_value, plugin.database.timezone, "-----"
         expect(last_run_value.strftime("%F %T.%N %Z")).to eq("2015-01-02 02:00:00.722000000 +00:00")
 
         plugin.run(queue)
