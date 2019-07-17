@@ -6,16 +6,21 @@ matrix:
   include:
   - rvm: jruby-9.2.7.0
     env: LOGSTASH_BRANCH=master
+    jdk:
+      - openjdk8
+      - openjdk11
   - rvm: jruby-9.2.7.0
     env: LOGSTASH_BRANCH=7.2
+    jdk:
+      - openjdk8
+      - openjdk11
   - rvm: jruby-9.1.13.0
     env: LOGSTASH_BRANCH=6.7
+    jdk: openjdk8
   - rvm: jruby-1.7.27
     env: LOGSTASH_BRANCH=5.6
+    jdk: openjdk8
   fast_finish: true
 install: true
 script: ci/build.sh
-jdk:
-  - openjdk8
-  - openjdk11
 before_install: gem install bundler -v '< 2'

@@ -21,5 +21,6 @@ else
     echo "Running default build scripts in: `pwd`/ci/build.sh"
     bundle install
     bundle exec rake vendor
-    bundle exec rspec spec
+    # The postgres driver prints a HUGE no connection stack trace to stderr
+    bundle exec rspec spec 2> /dev/null
 fi
