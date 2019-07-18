@@ -1,0 +1,17 @@
+version: '3'
+
+# run tests:  cd ci/unit; docker-compose up --build --force-recreate
+# manual:  cd ci/unit; docker-compose run logstash bash
+services:
+
+  logstash:
+    build:
+      context: ../../
+      dockerfile: ci/unit/Dockerfile
+      args:
+        - ELASTIC_STACK_VERSION=$ELASTIC_STACK_VERSION
+    command: /usr/share/plugins/plugin/ci/unit/run.sh
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      LOGSTASH_SOURCE: 1
+    tty: true
