@@ -11,11 +11,7 @@ require "stud/temporary"
 require "time"
 require "date"
 
-# This is a necessary change test-wide to guarantee that no local timezone
-# is picked up. It could be arbitrarily set to any timezone, but then the test
-# would have to compensate differently.  That's why UTC is chosen.
-# Java 9+ or Jruby 9.2+ needs to see this env var - setting it here is not enough.
-raise "These tests need to be run in the UTC timezone, set TZ=UTC before invoking rspec" if ENV["TZ"] !~ /UTC\z/
+# We do not need to set TZ env var anymore because we can have 'Sequel.application_timezone' set to utc by default now.
 
 describe LogStash::Inputs::Jdbc do
   let(:mixin_settings) do

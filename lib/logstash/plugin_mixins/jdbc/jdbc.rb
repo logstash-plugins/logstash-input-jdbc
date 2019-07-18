@@ -100,7 +100,8 @@ module LogStash  module PluginMixins module Jdbc
       # Number of seconds to sleep between connection attempts
       config :connection_retry_attempts_wait_time, :validate => :number, :default => 0.5
 
-      config :application_timezone, :validate => ["local", "utc"], :default => "local"
+      # give users the ability to force Sequel application side into using local timezone
+      config :plugin_timezone, :validate => ["local", "utc"], :default => "utc"
     end
 
     private
@@ -169,7 +170,7 @@ module LogStash  module PluginMixins module Jdbc
       require "sequel"
       require "sequel/adapters/jdbc"
 
-      Sequel.application_timezone = @application_timezone.to_sym
+      Sequel.application_timezone = @plugin_timezone.to_sym
 
       begin
         load_drivers
