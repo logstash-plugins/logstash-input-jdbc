@@ -1,6 +1,23 @@
 # encoding: UTF-8
 # frozen_string_literal: true
 
+# There is a bug in JRuby versions between 9.2.0.0 and 9.2.8.0
+# the TZinfo::Timestamp `new_datetime` can build Rational numbers having
+# numerators and denominators that are too large for Java longs.
+#
+# This patch reopens the TZinfo::Timestamp class and redefines
+# the `new_datetime method.
+# It scales down the numerator and denominator if they are larger than
+# Java Long. There is no appreciable precision loss at the microsecond level
+
+tzinfo_jruby_bugfixed_version = "9.2.8.0"
+
+current_jruby_version = Gem::Version.new(JRUBY_VERSION)
+patched_jruby_version = Gem::Version.new(tzinfo_jruby_bugfixed_version)
+tzinfo_patch_remove_message = "This patch file must be removed, the JRuby bug that this patch provides has been fixed in #{tzinfo_jruby_bugfixed_version} (but please check)"
+
+raise tzinfo_patch_remove_message unless current_jruby_version < patched_jruby_version
+
 require 'tzinfo'
 
 if defined?(TZInfo::VERSION) && TZInfo::VERSION > '2'
