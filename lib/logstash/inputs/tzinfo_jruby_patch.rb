@@ -11,12 +11,13 @@
 # Java Long. There is no appreciable precision loss at the microsecond level
 
 tzinfo_jruby_bugfixed_version = "9.2.8.0"
+tzinfo_jruby_bugadded_version = "9.2.0.0"
 
 current_jruby_version = Gem::Version.new(JRUBY_VERSION)
+broken_jruby_version = Gem::Version.new(tzinfo_jruby_bugadded_version)
 patched_jruby_version = Gem::Version.new(tzinfo_jruby_bugfixed_version)
-tzinfo_patch_remove_message = "This patch file must be removed, the JRuby bug that this patch provides has been fixed in #{tzinfo_jruby_bugfixed_version} (but please check)"
 
-raise tzinfo_patch_remove_message unless current_jruby_version < patched_jruby_version
+return unless current_jruby_version >= broken_jruby_version && current_jruby_version < patched_jruby_version
 
 require 'tzinfo'
 

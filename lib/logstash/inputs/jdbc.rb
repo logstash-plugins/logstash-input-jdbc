@@ -2,6 +2,8 @@
 require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc/jdbc"
+
+# this require_relative returns early unless the JRuby version is between 9.2.0.0 and 9.2.8.0
 require_relative "tzinfo_jruby_patch"
 
 # This plugin was created as a way to ingest data from any database
