@@ -33,10 +33,10 @@ module LogStash module PluginMixins module Jdbc
 
     def initialize(handler)
       @file_handler = handler
-      set_value(get_initial)
+      set_initial
     end
 
-    def get_initial
+    def set_initial
       # override in subclass
     end
 
@@ -47,12 +47,23 @@ module LogStash module PluginMixins module Jdbc
     def write
       @file_handler.write(@value)
     end
+
+    private
+    def common_set_initial(method_symbol, default)
+      persisted = @file_handler.read
+      if persisted && persisted.respond_to?(method_symbol)
+        @value = persisted
+      else
+        @file_handler.clean
+        @value = default
+      end
+    end
   end
 
 
   class NumericValueTracker < ValueTracking
-    def get_initial
-      @file_handler.read || 0
+    def set_initial
+      common_set_initial(:gcd, 0)
     end
 
     def set_value(value)
@@ -62,8 +73,8 @@ module LogStash module PluginMixins module Jdbc
   end
 
   class DateTimeValueTracker < ValueTracking
-    def get_initial
-      @file_handler.read || DateTime.new(1970)
+    def set_initial
+      common_set_initial(:to_datetime, DateTime.new(1970))
     end
 
     def set_value(value)
@@ -76,8 +87,8 @@ module LogStash module PluginMixins module Jdbc
   end
 
   class TimeValueTracker < ValueTracking
-    def get_initial
-      @file_handler.read || Time.at(0).utc
+    def set_initial
+      common_set_initial(:to_time, Time.at(0).utc)
     end
 
     def set_value(value)
@@ -90,6 +101,8 @@ module LogStash module PluginMixins module Jdbc
   end
 
   class FileHandler
+    attr_reader :path
+
     def initialize(path)
       @path = path
       @exists = ::File.exist?(@path)

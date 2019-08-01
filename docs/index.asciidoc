@@ -149,6 +149,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 [cols="<,<,<",options="header",]
 |=======================================================================
 |Setting |Input type|Required
+| <<plugins-{type}s-{plugin}-plugin_timezone>> |<<string,string>>, one of `["local", "utc"]`|No
 | <<plugins-{type}s-{plugin}-clean_run>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-columns_charset>> |<<hash,hash>>|No
 | <<plugins-{type}s-{plugin}-connection_retry_attempts>> |<<number,number>>|No
@@ -247,12 +248,34 @@ JDBC connection string
   * There is no default value for this setting.
 
 Timezone conversion.
-SQL does not allow for timezone data in timestamp fields.  This plugin will automatically
-convert your SQL timestamp fields to Logstash timestamps, in relative UTC time in ISO8601 format.
+Logstash (and Elasticsearch) expects that timestamps are expressed in UTC terms.
+If your database has recorded timestamps that are relative to another timezone,
+the database timezone if you will, then set this setting to be the timezone that
+the database is using. However, as SQL does not allow for timezone data in
+timestamp fields we can't figure this out on a record by record basis.  This plugin
+will automatically convert your SQL timestamp fields to Logstash timestamps,
+in relative UTC time in ISO8601 format.
 
 Using this setting will manually assign a specified timezone offset, instead
 of using the timezone setting of the local machine.  You must use a canonical
 timezone, *America/Denver*, for example.
+
+[id="plugins-{type}s-{plugin}-plugin_timezone"]
+===== `plugin_timezone`
+
+  * Value can be any of: `utc`, `local`
+  * Default value is `"utc"`
+
+If you want this plugin to offset timestamps to a timezone other than UTC, you
+can set this setting to `local` and the plugin will use the OS timezone for offset
+adjustments.
+
+Note: when specifying `plugin_timezone` and/or `jdbc_default_timezone`, offset
+adjustments are made in two places, if `sql_last_value` is a timestamp and it
+is used as a parameter in the statement then offset adjustment is done from the
+plugin timezone into the data timezone and while records are processed, timestamps
+are offset adjusted from the database timezone to the plugin timezone. If your
+database timezone is UTC then you do not need to set either of these settings.
 
 [id="plugins-{type}s-{plugin}-jdbc_driver_class"]
 ===== `jdbc_driver_class`

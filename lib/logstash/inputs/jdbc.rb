@@ -3,6 +3,8 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require "logstash/plugin_mixins/jdbc/jdbc"
 
+# this require_relative returns early unless the JRuby version is between 9.2.0.0 and 9.2.8.0
+require_relative "tzinfo_jruby_patch"
 
 # This plugin was created as a way to ingest data from any database
 # with a JDBC interface into Logstash. You can periodically schedule ingestion
@@ -84,19 +86,19 @@ require "logstash/plugin_mixins/jdbc/jdbc"
 # The file option only supports one SQL statement. The plugin will only accept one of the options.
 # It cannot read a statement from a file as well as from the `statement` configuration parameter.
 #
-# ==== Configuring multiple SQL statements 
+# ==== Configuring multiple SQL statements
 #
-# Configuring multiple SQL statements is useful when there is a need to query and ingest data 
-# from different database tables or views. It is possible to define separate Logstash 
-# configuration files for each statement or to define multiple statements in a single configuration 
-# file. When using multiple statements in a single Logstash configuration file, each statement 
-# has to be defined as a separate jdbc input (including jdbc driver, connection string and other 
-# required parameters). 
+# Configuring multiple SQL statements is useful when there is a need to query and ingest data
+# from different database tables or views. It is possible to define separate Logstash
+# configuration files for each statement or to define multiple statements in a single configuration
+# file. When using multiple statements in a single Logstash configuration file, each statement
+# has to be defined as a separate jdbc input (including jdbc driver, connection string and other
+# required parameters).
 #
-# Please note that if any of the statements use the `sql_last_value` parameter (e.g. for 
-# ingesting only data changed since last run), each input should define its own 
+# Please note that if any of the statements use the `sql_last_value` parameter (e.g. for
+# ingesting only data changed since last run), each input should define its own
 # `last_run_metadata_path` parameter. Failure to do so will result in undesired behaviour, as
-# all inputs will store their state to the same (default) metadata file, effectively 
+# all inputs will store their state to the same (default) metadata file, effectively
 # overwriting each other's `sql_last_value`.
 #
 # ==== Predefined Parameters
@@ -178,11 +180,11 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   # Whether to force the lowercasing of identifier fields
   config :lowercase_column_names, :validate => :boolean, :default => true
 
-  # The character encoding of all columns, leave empty if the columns are already properly UTF-8 
+  # The character encoding of all columns, leave empty if the columns are already properly UTF-8
   # encoded. Specific columns charsets using :columns_charset can override this setting.
   config :charset, :validate => :string
 
-  # The character encoding for specific columns. This option will override the `:charset` option 
+  # The character encoding for specific columns. This option will override the `:charset` option
   # for the specified columns.
   #
   # Example:
@@ -198,6 +200,8 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   # -------------------------------------------------------
   # this will only convert column0 that has ISO-8859-1 as an original encoding.
   config :columns_charset, :validate => :hash, :default => {}
+
+  attr_reader :database # for test mocking/stubbing
 
   public
 
