@@ -97,6 +97,13 @@ Reading data from MySQL:
 	    jdbc_password => "password"
       # or jdbc_password_filepath => "/path/to/my/password_file"
 	    statement => "SELECT ..."
+	    use_column_value => true
+        tracking_column => tracking_number
+        last_run_storage => "zookeeper"
+      # or last_run_storage => "file"
+      # last_run_metadata_path => "/path/to/last_run_metadata_path"
+        last_run_zookeeper_path => "/last_run_zookeeper_path"
+        zk_ip_list => "zookeeper_host:zookeeper_port"
 	    jdbc_paging_enabled => "true"
 	    jdbc_page_size => "50000"
 	  }

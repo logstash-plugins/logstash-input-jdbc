@@ -24,6 +24,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'tzinfo'
   s.add_runtime_dependency 'tzinfo-data'
   s.add_runtime_dependency 'rufus-scheduler'
+  s.add_runtime_dependency "zk", ">= 1.9.6"
 
   s.add_development_dependency 'logstash-devutils'
   s.add_development_dependency 'timecop'
