@@ -171,22 +171,24 @@ module LogStash  module PluginMixins module Jdbc
       require "sequel/adapters/jdbc"
 
       Sequel.application_timezone = @plugin_timezone.to_sym
-
-      begin
-        load_drivers
-        Sequel::JDBC.load_driver(@jdbc_driver_class)
-      rescue LogStash::Error => e
-        # raised in load_drivers, e.cause should be the caught Java exceptions
-        raise LogStash::PluginLoadingError, "#{e.message} and #{e.cause.message}"
-      rescue Sequel::AdapterNotFound => e
-        # fix this !!!
-        message = if @jdbc_driver_library.nil?
-          ":jdbc_driver_library is not set, are you sure you included
-                    the proper driver client libraries in your classpath?"
-        else
-          "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
+      if @drivers_loaded.false?
+        begin
+          load_drivers
+          Sequel::JDBC.load_driver(@jdbc_driver_class)
+        rescue LogStash::Error => e
+          # raised in load_drivers, e.cause should be the caught Java exceptions
+          raise LogStash::PluginLoadingError, "#{e.message} and #{e.cause.message}"
+        rescue Sequel::AdapterNotFound => e
+          # fix this !!!
+          message = if @jdbc_driver_library.nil?
+            ":jdbc_driver_library is not set, are you sure you included
+                      the proper driver client libraries in your classpath?"
+          else
+            "Are you sure you've included the correct jdbc driver in :jdbc_driver_library?"
+          end
+          raise LogStash::PluginLoadingError, "#{e}. #{message}"
         end
-        raise LogStash::PluginLoadingError, "#{e}. #{message}"
+        @drivers_loaded.make_true
       end
       @database = jdbc_connect()
       @database.extension(:pagination)
@@ -226,6 +228,7 @@ module LogStash  module PluginMixins module Jdbc
     public
     def prepare_jdbc_connection
       @connection_lock = ReentrantLock.new
+      @drivers_loaded = Concurrent::AtomicBoolean.new
     end
 
     public

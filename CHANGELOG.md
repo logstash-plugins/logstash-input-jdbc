@@ -1,3 +1,11 @@
+## 4.3.15
+  - Use atomic booleam to load drivers once
+  - Added CHANGELOG entries
+
+## 4.3.14
+  - Added support for driver loading in JDK 9+ [Issue 331](https://github.com/logstash-plugins/logstash-input-jdbc/issues/331)
+  - Gem released without CHANGELOG additions
+
 ## 4.3.13
   - Changed documentation to generalize the PATH location [#297](https://github.com/logstash-plugins/logstash-input-jdbc/pull/297)
 
