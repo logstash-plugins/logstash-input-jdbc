@@ -49,6 +49,7 @@ module LogStash module PluginMixins module Jdbc
     private
     def common_set_initial(method_symbol, default)
       persisted = @file_handler.read
+
       if persisted && persisted.respond_to?(method_symbol)
         @value = persisted
       else

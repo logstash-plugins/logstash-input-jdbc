@@ -11,6 +11,10 @@ require "stud/temporary"
 require "time"
 require "date"
 
+# ENV["LOG_AT"].tap do |level|
+#   LogStash::Logging::Logger::configure_logging(level) unless level.nil?
+# end
+
 # We do not need to set TZ env var anymore because we can have 'Sequel.application_timezone' set to utc by default now.
 
 describe LogStash::Inputs::Jdbc do
@@ -1307,6 +1311,93 @@ describe LogStash::Inputs::Jdbc do
         expect(event.get("custom_time")).to be_a(LogStash::Timestamp)
         expect(event.get("custom_time").to_s).to eq("1999-12-31T23:59:59.000Z")
         expect(event.get("ranking").to_f).to eq(95.67)
+      end
+    end
+  end
+
+  context "when using prepared statements" do
+    before do
+      ::File.write(settings["last_run_metadata_path"], YAML.dump(last_run_value))
+      num_rows.times do |n|
+        db[:test_table].insert(:num => n.succ, :string => SecureRandom.hex(8), :custom_time => Time.now.utc, :created_at => Time.now.utc)
+      end
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+    let(:last_run_value) { 250 }
+    let(:expected_queue_size) { 100 }
+    let(:num_rows) { 1000 }
+
+    context "without bind paramters" do
+      let(:settings) do
+        {
+          "statement" => "SELECT * FROM test_table ORDER BY num FETCH NEXT 100 ROWS ONLY",
+          "prepared_statement_bind_values" => [],
+          "prepared_statement_name" => "pstmt_test_without",
+          "use_prepared_statements" => true,
+          "tracking_column_type" => "numeric",
+          "tracking_column" => "num",
+          "use_column_value" => true,
+          "last_run_metadata_path" => Stud::Temporary.pathname
+        }
+      end
+
+      it "should fetch some rows" do
+        plugin.run(queue)
+
+        expect(queue.size).to eq(expected_queue_size)
+        expect(YAML.load(File.read(settings["last_run_metadata_path"]))).to eq(expected_queue_size)
+      end
+    end
+
+    context "with jdbc paging enabled" do
+      let(:settings) do
+        {
+          "statement" => "SELECT * FROM test_table ORDER BY num FETCH NEXT 100 ROWS ONLY",
+          "prepared_statement_bind_values" => [],
+          "prepared_statement_name" => "pstmt_test_without",
+          "use_prepared_statements" => true,
+          "tracking_column_type" => "numeric",
+          "tracking_column" => "num",
+          "use_column_value" => true,
+          "last_run_metadata_path" => Stud::Temporary.pathname,
+          "jdbc_paging_enabled" => true,
+          "jdbc_page_size" => 20,
+          "jdbc_fetch_size" => 10
+        }
+      end
+
+      it "should fetch some rows" do
+        plugin.run(queue)
+
+        expect(queue.size).to eq(expected_queue_size)
+        expect(YAML.load(File.read(settings["last_run_metadata_path"]))).to eq(expected_queue_size)
+      end
+    end
+
+    context "with bind parameters" do
+      let(:settings) do
+        {
+          # Sadly, postgres does but derby doesn't - It is not allowed for both operands of '+' to be ? parameters.: PREPARE pstmt_test: SELECT * FROM test_table WHERE (num > ?) AND (num <= ? + ?) ORDER BY num
+          "statement" => "SELECT * FROM test_table WHERE (num > ?) ORDER BY num FETCH NEXT ? ROWS ONLY",
+          "prepared_statement_bind_values" => [":sql_last_value", expected_queue_size],
+          "prepared_statement_name" => "pstmt_test_with",
+          "use_prepared_statements" => true,
+          "tracking_column_type" => "numeric",
+          "tracking_column" => "num",
+          "use_column_value" => true,
+          "last_run_metadata_path" => Stud::Temporary.pathname
+        }
+      end
+
+      it "should fetch some rows" do
+        plugin.run(queue)
+
+        expect(queue.size).to eq(expected_queue_size)
+        expect(YAML.load(File.read(settings["last_run_metadata_path"]))).to eq(last_run_value + expected_queue_size)
       end
     end
   end

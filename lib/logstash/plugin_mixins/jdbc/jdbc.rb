@@ -252,11 +252,9 @@ module LogStash  module PluginMixins module Jdbc
       @connection_lock.lock
       open_jdbc_connection
       begin
-        query = @statement_handler.build_query(@database, @value_tracker.value)
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
-        @statement_logger.log_statement_parameters(query, statement, params)
-        perform_query(query) do |row|
+        @statement_handler.perform_query(@database, @value_tracker.value) do |row|
           sql_last_value = get_column_value(row) if @use_column_value
           yield extract_values_from(row)
         end
@@ -270,24 +268,6 @@ module LogStash  module PluginMixins module Jdbc
         @connection_lock.unlock
       end
       return success
-    end
-
-# Performs the query, respecting our pagination settings, yielding once per row of data
-# @param query [Sequel::Dataset]
-# @yieldparam row [Hash{Symbol=>Object}]
-    private
-    def perform_query(query)
-      if @jdbc_paging_enabled
-        query.each_page(@jdbc_page_size) do |paged_dataset|
-          paged_dataset.each do |row|
-            yield row
-          end
-        end
-      else
-        query.each do |row|
-          yield row
-        end
-      end
     end
 
     public

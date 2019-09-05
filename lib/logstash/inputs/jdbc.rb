@@ -201,13 +201,13 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   # this will only convert column0 that has ISO-8859-1 as an original encoding.
   config :columns_charset, :validate => :hash, :default => {}
 
-  attr_reader :database # for test mocking/stubbing
-
   config :use_prepared_statements, :validate => :boolean, :default => false
 
   config :prepared_statement_name, :validate => :string, :default => SecureRandom.hex(40)
 
   config :prepared_statement_bind_values, :validate => :array, :default => []
+
+  attr_reader :database # for test mocking/stubbing
 
   public
 
@@ -250,13 +250,11 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
         converters[encoding] = converter
       end
     end
-
-    @statement_handler = LogStash::PluginMixins::Jdbc::StatementHandler.build_statement_handler(self)
   end # def register
 
   # test injection points
   def set_statement_logger(instance)
-    @statement_logger = instance
+    @statement_handler = LogStash::PluginMixins::Jdbc::StatementHandler.build_statement_handler(self, instance)
   end
 
   def set_value_tracker(instance)

@@ -1,18 +1,17 @@
 # encoding: utf-8
-require "logstash/util/loggable"
 
 module LogStash module PluginMixins module Jdbc
   class StatementHandler
-    include LogStash::Util::Loggable
-    def self.build_statement_handler(plugin)
+    def self.build_statement_handler(plugin, logger)
       klass = plugin.use_prepared_statements ? PreparedStatementHandler: NormalStatementHandler
-      klass.new(plugin)
+      klass.new(plugin, logger)
     end
 
-    attr_reader :statement, :parameters
+    attr_reader :statement, :parameters, :statement_logger
 
-    def initialize(plugin)
+    def initialize(plugin, statement_logger)
       @statement = plugin.statement
+      @statement_logger = statement_logger
       post_init(plugin)
     end
 
@@ -26,12 +25,33 @@ module LogStash module PluginMixins module Jdbc
   end
 
   class NormalStatementHandler < StatementHandler
-    def build_query(db, sql_last_value)
-      parameters[:sql_last_value] = sql_last_value
-      query = db[statement, parameters]
+    # Performs the query, respecting our pagination settings, yielding once per row of data
+    # @param db [Sequel::Database]
+    # @param sql_last_value [Integet|DateTime|Time]
+    # @yieldparam row [Hash{Symbol=>Object}]
+    def perform_query(db, sql_last_value)
+      query = build_query(db, sql_last_value)
+      if @jdbc_paging_enabled
+        query.each_page(@jdbc_page_size) do |paged_dataset|
+          paged_dataset.each do |row|
+            yield row
+          end
+        end
+      else
+        query.each do |row|
+          yield row
+        end
+      end
     end
 
     private
+
+    def build_query(db, sql_last_value)
+      parameters[:sql_last_value] = sql_last_value
+      query = db[statement, parameters]
+      statement_logger.log_statement_parameters(query, statement, parameters)
+      query
+    end
 
     def post_init(plugin)
       @parameter_keys = ["sql_last_value"] + plugin.parameters.keys
@@ -50,10 +70,25 @@ module LogStash module PluginMixins module Jdbc
   class PreparedStatementHandler < StatementHandler
     attr_reader :name, :bind_values_array, :statement_prepared, :prepared
 
+    # Performs the query, ignoring our pagination settings, yielding once per row of data
+    # @param db [Sequel::Database]
+    # @param sql_last_value [Integet|DateTime|Time]
+    # @yieldparam row [Hash{Symbol=>Object}]
+    def perform_query(db, sql_last_value)
+      query = build_query(db, sql_last_value)
+      query.each do |row|
+        yield row
+      end
+    end
+
+    private
+
     def build_query(db, sql_last_value)
-      bound_values = create_bind_values_hash
+      # don't log statement count when using prepared statements for now...
+      # needs enhancement to allow user to supply a bindable count prepared statement in settings.
+      @parameters = create_bind_values_hash
       if statement_prepared.false?
-        prepended = bound_values.keys.map{|v| v.to_s.prepend("$").to_sym}
+        prepended = parameters.keys.map{|v| v.to_s.prepend("$").to_sym}
         @prepared = db[statement, *prepended].prepare(:select, name)
         statement_prepared.make_true
       end
@@ -62,15 +97,14 @@ module LogStash module PluginMixins module Jdbc
       if db.prepared_statement(name).nil?
         db.set_prepared_statement(name, prepared)
       end
-      bind_value_sql_last_value(bound_values, sql_last_value)
-      db.call(name, bound_values)
+      bind_value_sql_last_value(sql_last_value)
+      db.call(name, parameters)
     end
-
-    private
 
     def post_init(plugin)
       @name = plugin.prepared_statement_name.to_sym
       @bind_values_array = plugin.prepared_statement_bind_values
+      @parameters = plugin.parameters
       @statement_prepared = Concurrent::AtomicBoolean.new(false)
     end
 
@@ -80,11 +114,11 @@ module LogStash module PluginMixins module Jdbc
       hash
     end
 
-    def bind_value_sql_last_value(hash, sql_last_value)
-      hash.keys.each do |key|
-        value = hash[key]
+    def bind_value_sql_last_value(sql_last_value)
+      parameters.keys.each do |key|
+        value = parameters[key]
         if value == ":sql_last_value"
-          hash[key] = sql_last_value
+          parameters[key] = sql_last_value
         end
       end
     end
