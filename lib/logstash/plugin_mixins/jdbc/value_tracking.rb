@@ -5,7 +5,7 @@ module LogStash module PluginMixins module Jdbc
   class ValueTracking
 
     def self.build_last_value_tracker(plugin)
-      handler = NullFileHandler.new(plugin.last_run_metadata_path)
+      handler = plugin.record_last_run ? FileHandler.new(plugin.last_run_metadata_path) : NullFileHandler.new(plugin.last_run_metadata_path)
       if plugin.record_last_run
         handler = FileHandler.new(plugin.last_run_metadata_path)
       end
