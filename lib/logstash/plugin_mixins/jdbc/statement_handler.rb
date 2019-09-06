@@ -3,7 +3,7 @@
 module LogStash module PluginMixins module Jdbc
   class StatementHandler
     def self.build_statement_handler(plugin, logger)
-      klass = plugin.use_prepared_statements ? PreparedStatementHandler: NormalStatementHandler
+      klass = plugin.use_prepared_statements ? PreparedStatementHandler : NormalStatementHandler
       klass.new(plugin, logger)
     end
 
