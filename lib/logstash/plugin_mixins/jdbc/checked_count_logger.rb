@@ -9,9 +9,14 @@ module LogStash module PluginMixins module Jdbc
       @in_debug = @logger.debug?
     end
 
-    def log_statement_parameters(query, statement, parameters)
+    def disable_count
+      @needs_check = false
+      @count_is_supported = false
+    end
+
+    def log_statement_parameters(statement, parameters, query)
       return unless @in_debug
-      check_count_query(query) if @needs_check
+      check_count_query(query) if @needs_check && query
       if @count_is_supported
         @logger.debug("Executing JDBC query", :statement => statement, :parameters => parameters, :count => execute_count(query))
       else

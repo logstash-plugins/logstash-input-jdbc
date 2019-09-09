@@ -49,7 +49,7 @@ module LogStash module PluginMixins module Jdbc
     def build_query(db, sql_last_value)
       parameters[:sql_last_value] = sql_last_value
       query = db[statement, parameters]
-      statement_logger.log_statement_parameters(query, statement, parameters)
+      statement_logger.log_statement_parameters(statement, parameters, query)
       query
     end
 
@@ -84,24 +84,27 @@ module LogStash module PluginMixins module Jdbc
     private
 
     def build_query(db, sql_last_value)
-      # don't log statement count when using prepared statements for now...
-      # needs enhancement to allow user to supply a bindable count prepared statement in settings.
       @parameters = create_bind_values_hash
       if statement_prepared.false?
         prepended = parameters.keys.map{|v| v.to_s.prepend("$").to_sym}
         @prepared = db[statement, *prepended].prepare(:select, name)
         statement_prepared.make_true
       end
-      # under the scheduler the database is recreated each time
+      # under the scheduler the Sequel database instance is recreated each time
       # so the previous prepared statements are lost, add back
       if db.prepared_statement(name).nil?
         db.set_prepared_statement(name, prepared)
       end
       bind_value_sql_last_value(sql_last_value)
+      statement_logger.log_statement_parameters(statement, parameters, nil)
       db.call(name, parameters)
     end
 
     def post_init(plugin)
+      # don't log statement count when using prepared statements for now...
+      # needs enhancement to allow user to supply a bindable count prepared statement in settings.
+      @statement_logger.disable_count
+
       @name = plugin.prepared_statement_name.to_sym
       @bind_values_array = plugin.prepared_statement_bind_values
       @parameters = plugin.parameters
