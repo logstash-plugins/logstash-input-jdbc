@@ -5,20 +5,7 @@ module LogStash module PluginMixins module Jdbc
   class ValueTracking
 
     def self.build_last_value_tracker(plugin)
-      if plugin.use_column_value && plugin.tracking_column_type == "numeric"
-        # use this irrespective of the jdbc_default_timezone setting
-        klass = NumericValueTracker
-      else
-        if plugin.jdbc_default_timezone.nil? || plugin.jdbc_default_timezone.empty?
-          # no TZ stuff for Sequel, use Time
-          klass = TimeValueTracker
-        else
-          # Sequel does timezone handling on DateTime only
-          klass = DateTimeValueTracker
-        end
-      end
-
-      handler = NullFileHandler.new(plugin.last_run_metadata_path)
+      handler = plugin.record_last_run ? FileHandler.new(plugin.last_run_metadata_path) : NullFileHandler.new(plugin.last_run_metadata_path)
       if plugin.record_last_run
         handler = FileHandler.new(plugin.last_run_metadata_path)
       end
@@ -26,7 +13,18 @@ module LogStash module PluginMixins module Jdbc
         handler.clean
       end
 
-      instance = klass.new(handler)
+      if plugin.use_column_value && plugin.tracking_column_type == "numeric"
+        # use this irrespective of the jdbc_default_timezone setting
+        NumericValueTracker.new(handler)
+      else
+        if plugin.jdbc_default_timezone.nil? || plugin.jdbc_default_timezone.empty?
+          # no TZ stuff for Sequel, use Time
+          TimeValueTracker.new(handler)
+        else
+          # Sequel does timezone handling on DateTime only
+          DateTimeValueTracker.new(handler)
+        end
+      end
     end
 
     attr_reader :value
@@ -51,6 +49,7 @@ module LogStash module PluginMixins module Jdbc
     private
     def common_set_initial(method_symbol, default)
       persisted = @file_handler.read
+
       if persisted && persisted.respond_to?(method_symbol)
         @value = persisted
       else

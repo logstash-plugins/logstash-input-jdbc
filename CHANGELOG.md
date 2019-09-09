@@ -1,3 +1,6 @@
+## 4.3.16
+  - Add support for prepared statements [Issue 233](https://github.com/logstash-plugins/logstash-input-jdbc/issues/233)
+
 ## 4.3.15
   - Use atomic booleam to load drivers once
   - Added CHANGELOG entries

@@ -6,6 +6,7 @@ require "date"
 require_relative "value_tracking"
 require_relative "checked_count_logger"
 require_relative "wrapped_driver"
+require_relative "statement_handler"
 
 java_import java.util.concurrent.locks.ReentrantLock
 
@@ -246,18 +247,14 @@ module LogStash  module PluginMixins module Jdbc
     end
 
     public
-    def execute_statement(statement, parameters)
-      # sql_last_value has been set in params by caller
+    def execute_statement
       success = false
       @connection_lock.lock
       open_jdbc_connection
       begin
-        params = symbolized_params(parameters)
-        query = @database[statement, params]
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
-        @statement_logger.log_statement_parameters(query, statement, params)
-        perform_query(query) do |row|
+        @statement_handler.perform_query(@database, @value_tracker.value) do |row|
           sql_last_value = get_column_value(row) if @use_column_value
           yield extract_values_from(row)
         end
@@ -273,24 +270,6 @@ module LogStash  module PluginMixins module Jdbc
       return success
     end
 
-# Performs the query, respecting our pagination settings, yielding once per row of data
-# @param query [Sequel::Dataset]
-# @yieldparam row [Hash{Symbol=>Object}]
-    private
-    def perform_query(query)
-      if @jdbc_paging_enabled
-        query.each_page(@jdbc_page_size) do |paged_dataset|
-          paged_dataset.each do |row|
-            yield row
-          end
-        end
-      else
-        query.each do |row|
-          yield row
-        end
-      end
-    end
-
     public
     def get_column_value(row)
       if !row.has_key?(@tracking_column.to_sym)
@@ -298,7 +277,7 @@ module LogStash  module PluginMixins module Jdbc
           @logger.warn("tracking_column not found in dataset.", :tracking_column => @tracking_column)
           @tracking_column_warning_sent = true
         end
-        # If we can't find the tracking column, return the current value_tracker value
+        # If we can't find the tracking column, return the current value in the ivar
         @value_tracker.value
       else
         # Otherwise send the updated tracking column
@@ -306,22 +285,8 @@ module LogStash  module PluginMixins module Jdbc
       end
     end
 
-# Symbolize parameters keys to use with Sequel
     private
-    def symbolized_params(parameters)
-      parameters.inject({}) do |hash,(k,v)|
-        case v
-        when LogStash::Timestamp
-          hash[k.to_sym] = v.time
-        else
-          hash[k.to_sym] = v
-        end
-        hash
-      end
-    end
-
-    private
-#Stringify row keys and decorate values when necessary
+    #Stringify row keys and decorate values when necessary
     def extract_values_from(row)
       Hash[row.map { |k, v| [k.to_s, decorate_value(v)] }]
     end
