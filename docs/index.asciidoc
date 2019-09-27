@@ -317,8 +317,12 @@ database timezone is UTC then you do not need to set either of these settings.
   * There is no default value for this setting.
 
 JDBC driver class to load, for example, "org.apache.derby.jdbc.ClientDriver"
-NB per https://github.com/logstash-plugins/logstash-input-jdbc/issues/43 if you are using
-the Oracle JDBC driver (ojdbc6.jar) the correct `jdbc_driver_class` is `"Java::oracle.jdbc.driver.OracleDriver"`
+
+NOTE: Per https://github.com/logstash-plugins/logstash-input-jdbc/issues/43, prepending `Java::` to the driver class
+ may be required if it appears that the driver is not being loaded correctly despite relevant jar(s) being provided by
+ either via the `jdbc_driver_library` setting or being placed in the Logstash  Java classpath. This is known to be the
+ case for the Oracle JDBC driver (ojdbc6.jar), where the correct `jdbc_driver_class` is
+ `"Java::oracle.jdbc.driver.OracleDriver"`, and may also be the case for other JDBC drivers.
 
 [id="plugins-{type}s-{plugin}-jdbc_driver_library"]
 ===== `jdbc_driver_library`
@@ -326,14 +330,12 @@ the Oracle JDBC driver (ojdbc6.jar) the correct `jdbc_driver_class` is `"Java::o
   * Value type is <<string,string>>
   * There is no default value for this setting.
 
-Tentative of abstracting JDBC logic to a mixin
-for potential reuse in other plugins (input/output)
-This method is called when someone includes this module
-Add these methods to the 'base' given.
 JDBC driver library path to third party driver library. In case of multiple libraries being
 required you can pass them separated by a comma.
 
-If not provided, Plugin will look for the driver class in the Logstash Java classpath.
+NOTE: If not provided, Plugin will look for the driver class in the Logstash Java classpath. Additionally, if the library
+ does not appear to be being loaded correctly via this setting, placing the relevant jar(s) in the Logstash Java
+ classpath rather than via this setting may help.
 
 [id="plugins-{type}s-{plugin}-jdbc_fetch_size"]
 ===== `jdbc_fetch_size`
