@@ -485,7 +485,7 @@ exactly once.
 
 General/Vendor-specific Sequel configuration options.
 
-An example of an optional connection pool configuration:
+Few examples of optional parameters (more general/vendor-specific options can be found at https://github.com/jeremyevans/sequel/blob/master/doc/opening_databases.rdoc):
    
 |==========================================================
 |max_connections | The maximum number of connections the connection pool
@@ -508,9 +508,6 @@ input {
   }
 }
 -------------------------------------------------------
-
-Examples of vendor-specific options can be found in this
-documentation page: https://github.com/jeremyevans/sequel/blob/master/doc/opening_databases.rdoc
 
 [id="plugins-{type}s-{plugin}-sql_log_level"]
 ===== `sql_log_level`
