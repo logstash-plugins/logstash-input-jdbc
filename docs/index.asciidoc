@@ -33,6 +33,9 @@ This plugin does not come packaged with JDBC driver libraries. The desired
 jdbc driver library must be explicitly passed in to the plugin using the
 `jdbc_driver_library` configuration option.
 
+See the <<plugins-{type}s-{plugin}-jdbc_driver_library>> and <<plugins-{type}s-{plugin}-jdbc_driver_class>>
+options for more info.
+
 ==== Scheduling
 
 Input from this plugin can be scheduled to run periodically according to a specific
