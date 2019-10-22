@@ -1,3 +1,6 @@
+## 4.3.17
+  - Added documentation to provide more info about jdbc driver loading [#352](https://github.com/logstash-plugins/logstash-input-jdbc/pull/352)
+
 ## 4.3.16
   - Add support for prepared statements [Issue 233](https://github.com/logstash-plugins/logstash-input-jdbc/issues/233)
 
