@@ -1,3 +1,6 @@
+## 4.3.18
+  - Fix issue with driver loading [#356](https://github.com/logstash-plugins/logstash-input-jdbc/pull/356)
+
 ## 4.3.17
   - Added documentation to provide more info about jdbc driver loading [#352](https://github.com/logstash-plugins/logstash-input-jdbc/pull/352)
 
