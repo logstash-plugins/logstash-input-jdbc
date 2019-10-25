@@ -140,28 +140,18 @@ module LogStash  module PluginMixins module Jdbc
 
     private
 
-    def load_drivers
-      return if @jdbc_driver_library.nil? || @jdbc_driver_library.empty?
-
-      driver_jars = @jdbc_driver_library.split(",")
-
-      # Needed for JDK 11 as the DriverManager has a different ClassLoader than Logstash
-      urls = java.net.URL[driver_jars.length].new
-
-      driver_jars.each_with_index do |driver, idx|
-        urls[idx] = java.io.File.new(driver).toURI().toURL()
-      end
-      ucl = java.net.URLClassLoader.new_instance(urls)
-      begin
-        klass = java.lang.Class.forName(@jdbc_driver_class.to_java(:string), true, ucl);
-      rescue Java::JavaLang::ClassNotFoundException => e
-        raise LogStash::Error, "Unable to find driver class via URLClassLoader in given driver jars: #{@jdbc_driver_class}"
-      end
-      begin
-        driver = klass.getConstructor().newInstance();
-        java.sql.DriverManager.register_driver(WrappedDriver.new(driver.to_java(java.sql.Driver)).to_java(java.sql.Driver))
-      rescue Java::JavaSql::SQLException => e
-        raise LogStash::Error, "Unable to register driver with java.sql.DriverManager using WrappedDriver: #{@jdbc_driver_class}"
+    def load_driver_jars
+      unless @jdbc_driver_library.nil? || @jdbc_driver_library.empty?
+        @jdbc_driver_library.split(",").each do |driver_jar|
+          begin
+            @logger.debug("loading #{driver_jar}")
+            # Use https://github.com/jruby/jruby/wiki/CallingJavaFromJRuby#from-jar-files to make classes from jar
+            # available
+            require driver_jar
+          rescue LoadError => e
+            raise LogStash::PluginLoadingError, "unable to load #{driver_jar} from :jdbc_driver_library, #{e.message}"
+          end
+        end
       end
     end
 
@@ -174,7 +164,7 @@ module LogStash  module PluginMixins module Jdbc
       Sequel.application_timezone = @plugin_timezone.to_sym
       if @drivers_loaded.false?
         begin
-          load_drivers
+          load_driver_jars
           Sequel::JDBC.load_driver(@jdbc_driver_class)
         rescue LogStash::Error => e
           # raised in load_drivers, e.cause should be the caught Java exceptions

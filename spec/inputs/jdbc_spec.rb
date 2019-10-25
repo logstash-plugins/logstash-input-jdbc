@@ -2,8 +2,6 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/jdbc"
 require "jdbc/derby"
-require 'jdbc/postgres'
-Jdbc::Postgres.load_driver
 require "sequel"
 require "sequel/adapters/jdbc"
 require "timecop"
@@ -75,24 +73,6 @@ describe LogStash::Inputs::Jdbc do
         }
       end
       let(:config) { mixin_settings.merge(settings) }
-    end
-  end
-
-  context "when connecting to a non-existent server", :no_connection => true do
-    let(:mixin_settings) do
-      super.merge(
-        "jdbc_driver_class" => "org.postgresql.Driver",
-        "jdbc_connection_string" => "jdbc:postgresql://localhost:65000/somedb"
-      )
-    end
-    let(:settings) { super.merge("statement" => "SELECT 1 as col1 FROM test_table", "jdbc_user" => "foo", "jdbc_password" => "bar") }
-
-    it "should not register correctly" do
-        plugin.register
-        q = Queue.new
-        expect do
-          plugin.run(q)
-        end.to raise_error(::Sequel::DatabaseConnectionError)
     end
   end
 
