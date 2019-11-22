@@ -1,3 +1,6 @@
+## 4.3.19
+  - Fixed issue where paging settings in configuration were not being honored [#361](https://github.com/logstash-plugins/logstash-input-jdbc/pull/361)
+
 ## 4.3.18
   - Fix issue with driver loading [#356](https://github.com/logstash-plugins/logstash-input-jdbc/pull/356)
 
