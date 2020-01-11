@@ -31,15 +31,19 @@ module LogStash module PluginMixins module Jdbc
     # @yieldparam row [Hash{Symbol=>Object}]
     def perform_query(db, sql_last_value, jdbc_paging_enabled, jdbc_page_size)
       query = build_query(db, sql_last_value)
-      if jdbc_paging_enabled
-        query.each_page(jdbc_page_size) do |paged_dataset|
-          paged_dataset.each do |row|
+      # Execute query in transaction cause PG driver require autocommit off for set fetch count
+      # See: https://jdbc.postgresql.org/documentation/head/query.html
+      db.transaction(rollback: :always) do
+        if jdbc_paging_enabled
+          query.each_page(jdbc_page_size) do |paged_dataset|
+            paged_dataset.each do |row|
+              yield row
+            end
+          end
+        else
+          query.each do |row|
             yield row
           end
-        end
-      else
-        query.each do |row|
-          yield row
         end
       end
     end
