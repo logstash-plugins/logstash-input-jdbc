@@ -339,6 +339,7 @@ required you can pass them separated by a comma.
 NOTE: If not provided, Plugin will look for the driver class in the Logstash Java classpath. Additionally, if the library
  does not appear to be being loaded correctly via this setting, placing the relevant jar(s) in the Logstash Java
  classpath rather than via this setting may help.
+ Please also make sure the path is readable by the Logstash process (e.g. `logstash` user when running as a service).
 
 [id="plugins-{type}s-{plugin}-jdbc_fetch_size"]
 ===== `jdbc_fetch_size`
