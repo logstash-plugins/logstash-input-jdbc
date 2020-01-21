@@ -1291,6 +1291,38 @@ describe LogStash::Inputs::Jdbc do
     end
   end
 
+  context "when an unreadable jdbc_driver_path entry is present" do
+    let(:driver_jar_path) do
+      jar_file = $CLASSPATH.find { |name| name.index(Jdbc::Derby.driver_jar) }
+      raise "derby jar not found on class-path" unless jar_file
+      jar_file.sub('file:', '')
+    end
+
+    let(:invalid_driver_jar_path) do
+      path = File.join(Dir.mktmpdir, File.basename(driver_jar_path))
+      FileUtils.cp driver_jar_path, path
+      FileUtils.chmod "u=x,go=", path
+      path
+    end
+
+    let(:settings) do
+      { "statement" => "SELECT * from types_table", "jdbc_driver_library" => invalid_driver_jar_path }
+    end
+
+    before do
+      plugin.register
+    end
+
+    after do
+      plugin.stop
+    end
+
+    it "raise a loading error" do
+      expect { plugin.run(queue) }.
+          to raise_error(LogStash::PluginLoadingError, /unable to load .*? from :jdbc_driver_library, file not readable/)
+    end
+  end
+
   context "when using prepared statements" do
     let(:last_run_value) { 250 }
     let(:expected_queue_size) { 100 }
