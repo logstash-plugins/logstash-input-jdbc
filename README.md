@@ -4,6 +4,16 @@ This is a plugin for [Logstash](https://github.com/elastic/logstash).
 
 It is fully free and fully open source. The license is Apache 2.0, meaning you are pretty much free to use it however you want in whatever way.
 
+
+## JDBC Input Plugin Has Moved
+
+This JDBC Input Plugin is now a part of the [JDBC Integration Plugin][integration-source];
+this project remains open for backports of fixes from that project to the 5.x series where possible, but issues should first be filed on the [integration plugin][integration-issues].
+
+[integration-source]: https://github.com/logstash-plugins/logstash-integration-jdbc
+[integration-issues]: https://github.com/logstash-plugins/logstash-integration-jdbc/issues/
+
+
 ## Documentation
 
 Logstash provides infrastructure to automatically generate documentation for this plugin. We use the asciidoc format to write documentation so any comments in the source code will be first converted into asciidoc and then into html. All plugin documentation are placed under one [central location](http://www.elastic.co/guide/en/logstash/current/).
