@@ -7,7 +7,7 @@
 // JDBC Input Plugin Source Has Moved       //
 // ---------------------------------------- //
 // The JDBC Input Plugin is now a part of   //
-// the JDBC Integration.                   //
+// the JDBC Integration Plugin.             //
 //                                          //
 // This stand-alone plugin project remains  //
 // open for backports to the 4.x series.    //
