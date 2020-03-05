@@ -14,10 +14,13 @@ services:
     environment:
       LS_JAVA_OPTS: "-Xmx256m -Xms256m"
       LOGSTASH_SOURCE: 1
+      POSTGRES_PASSWORD: "test_user_password"
     tty: true
 
   postgresql:
     image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: "test_user_password"
     volumes:
     - ./setup.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
