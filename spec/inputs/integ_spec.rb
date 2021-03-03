@@ -47,7 +47,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
 
   context "when supplying a non-existent library" do
     let(:settings) do
-      super.merge(
+      super().merge(
           "jdbc_driver_library" => "/no/path/to/postgresql.jar"
       )
     end
@@ -63,7 +63,7 @@ describe LogStash::Inputs::Jdbc, :integration => true do
 
   context "when connecting to a non-existent server" do
     let(:settings) do
-      super.merge(
+      super().merge(
           "jdbc_connection_string" => "jdbc:postgresql://localhost:65000/somedb"
       )
     end
