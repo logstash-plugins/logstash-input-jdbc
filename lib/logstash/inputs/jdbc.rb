@@ -207,6 +207,30 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
 
   config :prepared_statement_bind_values, :validate => :array, :default => []
 
+  # By default, the query SQL with pagination will be wrapped like this:
+  # [source,ruby]
+  # -------------------------------------------------------
+  # SELECT * FROM ( SELECT ... ) AS `t1` LIMIT 10000 OFFSET 10000
+  # -------------------------------------------------------
+  #
+  # When set to false, you should control the pagination by yourself with `:sql_last_value`
+  #
+  # Example:
+  # [source,ruby]
+  # -------------------------------------------------------
+  # input {
+  #   jdbc {
+  #     ...
+  #     statement => "SELECT id, mycolumn1, mycolumn2 FROM my_table WHERE id > :sql_last_value AND id <= :sql_last_value + 10000"
+  #     ...
+  #   }
+  # }
+  # -------------------------------------------------------
+  # This is useful when paging under big data.
+  #
+  # Warning: you should avoid sinking into dead circulation!
+  config :paging_wrapper_enabled, :validate => :boolean, :default => true
+
   attr_reader :database # for test mocking/stubbing
 
   public

@@ -244,9 +244,22 @@ module LogStash  module PluginMixins module Jdbc
       begin
         sql_last_value = @use_column_value ? @value_tracker.value : Time.now.utc
         @tracking_column_warning_sent = false
-        @statement_handler.perform_query(@database, @value_tracker.value, @jdbc_paging_enabled, @jdbc_page_size) do |row|
-          sql_last_value = get_column_value(row) if @use_column_value
-          yield extract_values_from(row)
+        if !@paging_wrapper_enabled and @jdbc_paging_enabled
+          continue = true
+          while continue
+            continue = false
+            @statement_handler.perform_query(@database, @value_tracker.value, false, @jdbc_page_size) do |row|
+              sql_last_value = get_column_value(row) if @use_column_value
+              continue = true if !continue
+              yield extract_values_from(row)
+            end
+            @value_tracker.set_value(sql_last_value) if continue
+          end
+        else
+          @statement_handler.perform_query(@database, @value_tracker.value, @jdbc_paging_enabled, @jdbc_page_size) do |row|
+            sql_last_value = get_column_value(row) if @use_column_value
+            yield extract_values_from(row)
+          end
         end
         success = true
       rescue Sequel::DatabaseConnectionError, Sequel::DatabaseError, Java::JavaSql::SQLException => e
