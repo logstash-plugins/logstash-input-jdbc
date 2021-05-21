@@ -270,6 +270,7 @@ module LogStash module Inputs class Jdbc < LogStash::Inputs::Base
   end
 
   def run(queue)
+    load_driver
     if @schedule
       @scheduler = Rufus::Scheduler.new(:max_work_threads => 1)
       @scheduler.cron @schedule do
