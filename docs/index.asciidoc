@@ -226,6 +226,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-tracking_column_type>> |<<string,string>>, one of `["numeric", "timestamp"]`|No
 | <<plugins-{type}s-{plugin}-use_column_value>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-use_prepared_statements>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-paging_wrapper_enabled>> |<<boolean,boolean>>|No
 |=======================================================================
 
 Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options supported by all
@@ -578,6 +579,35 @@ to `false`, `:sql_last_value` reflects the last time the query was executed.
   * Default value is `false`
 
 When set to `true`, enables prepare statement usage
+
+[id="plugins-{type}s-{plugin}-paging_wrapper_enabled"]
+===== `paging_wrapper_enabled`
+
+  * Value type is <<boolean,boolean>>
+  * Default value is `true`
+
+By default, the query SQL with pagination will be wrapped like this:
+[source,ruby]
+-------------------------------------------------------
+SELECT * FROM ( SELECT ... ) AS `t1` LIMIT 10000 OFFSET 10000
+-------------------------------------------------------
+
+When set to false, you should control the pagination by yourself with `:sql_last_value`
+
+Example:
+[source,ruby]
+-------------------------------------------------------
+input {
+  jdbc {
+    ...
+    statement => "SELECT id, mycolumn1, mycolumn2 FROM my_table WHERE id > :sql_last_value AND id <= :sql_last_value + 10000"
+    ...
+  }
+}
+-------------------------------------------------------
+This is useful when paging under big data.
+
+Warning: you should avoid sinking into dead circulation!
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
